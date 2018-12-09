@@ -15,11 +15,13 @@ public class StartCommand implements BaseCommand {
         // init the user if needed
         // TODO
         try (Connection conn = Main.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("replace into tg_users (tgid, username) values (?, ?)");
+            PreparedStatement stmt = conn.prepareStatement("REPLACE INTO tg_users (tgid, username) VALUES (?, ?)");
             stmt.setInt(1, msg.from().id());
             stmt.setString(2, msg.from().username());
             stmt.execute();
-            bot.execute(new SendMessage(msg.chat().id(), "Hello world!").replyToMessageId(msg.messageId()));
+            if (msg.chat().type() == Chat.Type.Private) {
+                bot.execute(new SendMessage(msg.chat().id(), "Hello! Thank you for starting me. Add me to a group and use /play to start a game.").replyToMessageId(msg.messageId()));
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             bot.execute(new SendMessage(msg.chat().id(), "An error occured: " + e.getMessage()).replyToMessageId(msg.messageId()));
