@@ -13,7 +13,7 @@ public class FallbackCommand implements BaseCommand {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         if (msg.chat().type() == Chat.Type.Private) {
-            bot.execute(new SendMessage(msg.chat().id(), "Unknown command, try /help.").replyToMessageId(msg.messageId()), new Callback<SendMessage, SendResponse>() {
+            bot.execute(new SendMessage(msg.chat().id(), "Unknown command.").replyToMessageId(msg.messageId()), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     System.out.print(response);
