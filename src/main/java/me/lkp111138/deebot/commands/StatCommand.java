@@ -21,7 +21,7 @@ public class StatCommand implements BaseCommand {
             target = msg.replyToMessage().from();
         }
         try (Connection conn = Main.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("select chips, won_cards, won_count, game_count, lost_cards from tg_users where tgid=?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT chips, won_cards, won_count, game_count, lost_cards FROM tg_users WHERE tgid=?");
             stmt.setInt(1, target.id());
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -32,15 +32,13 @@ public class StatCommand implements BaseCommand {
                     sb.append(String.format("Lost cards: %d\n", rs.getInt(5)));
                     sb.append(String.format("Won/Total games: %d / %d (%.2f%%)\n", rs.getInt(3), rs.getInt(4), 100.0 * rs.getInt(3) / rs.getInt(4)));
                     sb.append(String.format("Won/Lost cards: %d / %d (%.2f%%)\n", rs.getInt(2), rs.getInt(5), 100.0 * rs.getInt(2) / rs.getInt(5)));
-                    if (msg.chat().type() == Chat.Type.Private) {
-                        sb.append(String.format("Chips: %d", rs.getInt(1)));
-                    }
+                    sb.append(String.format("Chips: %d", rs.getInt(1)));
                     bot.execute(new SendMessage(msg.chat().id(), sb.toString()).replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
                 } else {
-                    bot.execute(new SendMessage(msg.chat().id(), "You haven't played the game!").replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
+                    bot.execute(new SendMessage(msg.chat().id(), "You haven't played a game yet!").replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
                 }
             } else {
-                bot.execute(new SendMessage(msg.chat().id(), "You haven't played the game!").replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
+                bot.execute(new SendMessage(msg.chat().id(), "You haven't played a game yet!").replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
             }
         } catch (SQLException e) {
             e.printStackTrace();
