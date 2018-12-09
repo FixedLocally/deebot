@@ -1,6 +1,7 @@
 package me.lkp111138.deebot.commands;
 
 import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.DeeBot;
@@ -19,12 +20,12 @@ public class PlayCommand implements BaseCommand {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         // ono LOGIC :EYES:
-        if (msg.chat().id() == msg.from().id().longValue()) {
+        if (msg.chat().type() == Chat.Type.Private) {
             // private chat cya
-            bot.execute(new SendMessage(msg.chat().id(), "You can't play with me! Try doing /" + args[0] + " in a group"));
+            bot.execute(new SendMessage(msg.chat().id(), "You cannot play in private! Try using /" + args[0] + " in a group."));
         } else {
             try (Connection conn = Main.getConnection()) {
-                PreparedStatement stmt = conn.prepareStatement("select chips_per_card, wait_time, turn_wait_time, lang, fry, collect_place from groups where gid=?");
+                PreparedStatement stmt = conn.prepareStatement("SELECT chips_per_card, wait_time, turn_wait_time, lang, fry, collect_place FROM groups WHERE gid=?");
                 stmt.setLong(1, msg.chat().id());
                 ResultSet rs = stmt.executeQuery();
                 GroupInfo info;
@@ -41,7 +42,7 @@ public class PlayCommand implements BaseCommand {
                     collect_place = rs.getBoolean(6);
                 } else {
                     // insert
-                    PreparedStatement stmt1 = conn.prepareStatement("insert into groups (gid) values (?)");
+                    PreparedStatement stmt1 = conn.prepareStatement("INSERT INTO groups (gid) VALUES (?)");
                     stmt1.setLong(1, msg.chat().id());
                     stmt1.execute();
                     stmt1.close();
