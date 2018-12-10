@@ -44,7 +44,7 @@ public class Game {
     private boolean first_round = true;
     private boolean all_passed = false;
     private List<User> players = new ArrayList<>();
-    private Card[][] cards = new Card[4][13];
+    private Card[][] cards = new Card[4][CARDS_PER_PLAYER];
     private int[] deck_msgid = new int[4];
     private boolean[] sort_by_suit = new boolean[]{false, false, false, false};
     private Card[] desk_cards = new Card[0];
@@ -60,6 +60,7 @@ public class Game {
     private static DeeBot bot;
     private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(2);
     private static int[] remind_seconds = new int[]{15, 30, 60, 90, 120, 180};
+    private static final int CARDS_PER_PLAYER = 13;
 
     public static void init(DeeBot _bot) {
         bot = _bot;
@@ -104,6 +105,7 @@ public class Game {
         while (wait > remind_seconds[i]) {
             ++i;
         }
+        System.out.println("scheduled remind task");
         schedule(this::remind, (wait - remind_seconds[--i]) * 1000);
     }
 
@@ -132,7 +134,7 @@ public class Game {
                         }
                     } else {
                         // for some reason we cant deliver the msg to the user, so we ask them to start me in the group
-                        bot.execute(new SendMessage(msg.chat().id(), getTranslation("START_ME_FIRST")).replyToMessageId(msg.messageId()).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("START_ME")).url("https://t.me/jokebig2bot")})));
+                        bot.execute(new SendMessage(msg.chat().id(), getTranslation("START_ME_FIRST")).replyToMessageId(msg.messageId()).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("START_ME")).url("https://t.me/" + System.getProperty("bot.username"))})));
                     }
                 }
 
@@ -175,7 +177,7 @@ public class Game {
         while (i < 6 && remind_seconds[i] < seconds) {
             ++i;
         }
-        System.out.println("scheduled next remind task");
+        System.out.println("scheduled remind task");
         schedule(this::remind, (seconds - remind_seconds[--i]) * 1000);
     }
 
@@ -287,8 +289,18 @@ public class Game {
                 }
                 // cancel their obligation if they dont have a eligible card
                 Card[] current_deck = cards[current_turn];
-                if (current_deck[current_deck.length - 1].ordinal() < desk_info.leading.ordinal()) {
-                    // they cant even try
+                if (cards[(current_turn + 1) & 3].length == 1 && desk_info.type == HandType.SINGLE) {
+                    System.out.println("next player has 1 card and single on desk, checking obligation!");
+                    if (current_deck[current_deck.length - 1].ordinal() < desk_info.leading.ordinal()) {
+                        // they cant even try
+                        System.out.println("they cant even try");
+                        largest_single_obgligation = -1;
+                    } else {
+                        // they didnt try
+                        System.out.println("they didnt try their best");
+                        largest_single_obgligation = current_turn;
+                    }
+                } else {
                     largest_single_obgligation = -1;
                 }
                 current_turn = (current_turn + 1) & 3;
@@ -305,7 +317,7 @@ public class Game {
         Arrays.sort(hand);
         HandInfo info = new HandInfo(hand);
         if (info.compare(desk_info) && info.type != HandType.NONE) {
-            Card[] current_deck = cards[current_turn];
+            final Card[] current_deck = cards[current_turn];
             // k hand valid, now remove cards from the player's deck and next turn
             // but check if the player is playing diamond 3 for the first turn
             if (first_round) {
@@ -337,17 +349,7 @@ public class Game {
                 cards[current_turn] = new Card[0];
                 end();
             } else {
-                // check the large card obligation and remove it if they used their largest card
-                if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
-                    if (info.leading == current_deck[current_deck.length - 1]) {
-                        // they tried their best
-                        largest_single_obgligation = -1;
-                    } else {
-                        largest_single_obgligation = current_turn;
-                    }
-                } else {
-                    largest_single_obgligation = -1;
-                }
+                // remove the placeholders from player deck
                 Card[] new_deck = new Card[cards[current_turn].length - hand.length];
                 int i = 0;
                 int j = 0;
@@ -358,6 +360,20 @@ public class Game {
                     j++;
                 }
                 cards[current_turn] = new_deck;
+                // check the large card obligation and remove it if they used their largest card
+                if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
+                    System.out.println("next player has 1 card and single on desk, checking obligation!");
+                    if (info.leading.ordinal() > current_deck[current_deck.length - 1].ordinal()) {
+                        // they tried their best
+                        System.out.println("current player tried their best");
+                        largest_single_obgligation = -1;
+                    } else {
+                        System.out.printf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
+                        largest_single_obgligation = current_turn;
+                    }
+                } else {
+                    largest_single_obgligation = -1;
+                }
                 Arrays.sort(cards[current_turn]);
                 if (info.leading == Card.S2 && (info.type == HandType.SINGLE || info.type == HandType.PAIR || info.type == HandType.TRIPLE)) {
                     desk_cards = new Card[0];
@@ -413,16 +429,19 @@ public class Game {
             } else {
                 offsets[i] = i == current_turn ? chips * card_total : -chips * deck_lengths[i];
             }
-            sb.append(String.format("<a href=\"tg://user?id=%d\">%s</a> - %d [%s%d]\n", players.get(i).id(), players.get(i).firstName(), cards[i].length, offsets[i] >= 0 ? "+" : "", offsets[i]));
         }
+        System.out.println(largest_single_obgligation);
         if (largest_single_obgligation != -1) {
             // oops someone gonna pay for their mistake
             for (int i = 0; i < 4; i++) {
-                if (offsets[i] < 0) {
+                if (offsets[i] < 0 && largest_single_obgligation != i) {
                     offsets[largest_single_obgligation] += offsets[i];
                     offsets[i] = 0;
                 }
             }
+        }
+        for (int i = 0; i < 4; i++) {
+            sb.append(String.format("<a href=\"tg://user?id=%d\">%s</a> - %d [%s%d]\n", players.get(i).id(), players.get(i).firstName(), cards[i].length, offsets[i] >= 0 ? "+" : "", offsets[i]));
         }
         sb.append(getTranslation("NEW_GAME_PROMPT"));
         String msg = sb.toString();
@@ -477,14 +496,14 @@ public class Game {
         while (true) {
             Card[] deck = Cards.shuffle();
             for (int i = 0; i < 4; i++) {
-                System.arraycopy(deck, i * 13, this.cards[i], 0, 13);
+                System.arraycopy(deck, i * 13, this.cards[i], 0, CARDS_PER_PLAYER);
                 Arrays.sort(this.cards[i]);
 //            System.out.printf("%s %s %s\n", this.cards[i]);
             }
             // here, if determine if we need to re-shuffle
             boolean _break = true;
             for (int i = 0; i < 4; ++i) {
-                if (cards[i][12].ordinal() < 44 && cards[i][10].ordinal() < 32 || cards[i][9].ordinal() > 48) {
+                if (cards[i][CARDS_PER_PLAYER - 1].ordinal() < 44 && cards[i][CARDS_PER_PLAYER - 3].ordinal() < 32 || cards[i][CARDS_PER_PLAYER - 4].ordinal() > 48) {
                     _break = false;
                 }
             }
@@ -506,6 +525,7 @@ public class Game {
         for (int i = 0; i < 4; i++) {
             order[i] = String.format("<a href=\"tg://user?id=%d\">%s</a>", players.get(i).id(), players.get(i).firstName());
         }
+        cards[0][0] = Card.D3;
         bot.execute(new SendMessage(gid, String.join(" > ", order)).parseMode(ParseMode.HTML), new EmptyCallback<>());
         // pm players with their cards
         for (int i = 0; i < 4; i++) {
@@ -559,27 +579,7 @@ public class Game {
                 }
             });
             System.out.println("scheduled auto pass job");
-            schedule(() -> {
-                // time is up for current round
-                System.out.println("firing auto pass job");
-                ++autopass_count;
-                bot.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("TIMES_UP")));
-                if (autopass_count < 8) {
-                    if (first_round) {
-                        play(new Card[]{Card.D3}, new AnswerCallbackQuery("0"), null, new String[]{"play", "D3"});
-                    } else {
-                        if (all_passed) {
-                            // play the smallest single
-                            play(new Card[]{cards[current_turn][0]}, new AnswerCallbackQuery("0"), null, new String[]{"play", cards[current_turn][0].toString()});
-                        } else {
-                            pass(new AnswerCallbackQuery("0"), null);
-                        }
-                    }
-                } else {
-                    bot.execute(new SendMessage(gid, getTranslation("AFK_KILL")));
-                    kill();
-                }
-            }, turn_wait * 1000 + 5000);
+            schedule(this::autopass, turn_wait * 1000 + 5000);
             // notify group
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 4; ++i) {
@@ -603,7 +603,7 @@ public class Game {
             String msg = sb.toString();
             SendMessage send = new SendMessage(gid, msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
             group.username();
-            send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("PICK_CARDS")).url("https://t.me/jokebig2bot")}));
+            send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("PICK_CARDS")).url("https://t.me/" + System.getProperty("bot.username"))}));
             bot.execute(send);
         }
     }
@@ -659,6 +659,7 @@ public class Game {
     }
 
     private void remind() {
+        System.out.println("firing remind task");
         long seconds = (start_time - System.currentTimeMillis()) / 1000;
         bot.execute(new SendMessage(gid, String.format(getTranslation("JOIN_PROMPT"), Math.round(seconds / 15.0) * 15)));
         int i;
@@ -667,7 +668,7 @@ public class Game {
             ++i;
         }
         if (i > 0) {
-            System.out.println("scheduled next remind task");
+            System.out.println("scheduled remind task");
             schedule(this::remind, start_time - System.currentTimeMillis() - remind_seconds[--i] * 1000);
         } else {
             System.out.println(String.format("scheduled kill task after %d seconds", seconds));
@@ -691,6 +692,33 @@ public class Game {
     private String getTranslation(String key) {
         return Translation.get(lang, key);
     }
+
+    public String getLang() {
+        return lang;
+    }
+
+    private void autopass() {
+        // time is up for current round
+        System.out.println("firing auto pass job");
+        ++autopass_count;
+        bot.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("TIMES_UP")));
+        if (autopass_count < 8) {
+            if (first_round) {
+                play(new Cards.Card[]{Cards.Card.D3}, new AnswerCallbackQuery("0"), null, new String[]{"play", "D3"});
+            } else {
+                if (all_passed) {
+                    // play the smallest single
+                    play(new Cards.Card[]{cards[current_turn][0]}, new AnswerCallbackQuery("0"), null, new String[]{"play", cards[current_turn][0].toString()});
+                } else {
+                    pass(new AnswerCallbackQuery("0"), null);
+                }
+            }
+        } else {
+            bot.execute(new SendMessage(gid, getTranslation("AFK_KILL")));
+            kill();
+        }
+    }
+
 
     public static class HandInfo {
         final HandType type;

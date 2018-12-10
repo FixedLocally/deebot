@@ -56,6 +56,7 @@ public class Translation {
         en.put("UPDATE_DECK", "Update deck");
         en.put("SORT_SUIT", "Sort by suit");
         en.put("SORT_FACE", "Sort by face");
+        en.put("FLEE_ANNOUNCEMENT", "<a href=\"tg://user?id=%d\">%s</a> has fled from the game! %d player%s remaining.");
         en.put("", "");
     }
 
@@ -99,6 +100,7 @@ public class Translation {
         zh.put("UPDATE_DECK", "更新手牌");
         zh.put("SORT_SUIT", "按花色排序");
         zh.put("SORT_FACE", "按點數排序");
+        zh.put("FLEE_ANNOUNCEMENT", "<a href=\"tg://user?id=%d\">%s</a> 已退出遊戲！ 尚餘 %d 名玩家");
         zh.put("", "");
     }
 
