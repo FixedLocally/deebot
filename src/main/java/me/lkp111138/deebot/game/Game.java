@@ -375,7 +375,14 @@ public class Game {
                     largest_single_obgligation = -1;
                 }
                 Arrays.sort(cards[current_turn]);
-                if (info.leading == Card.S2 && (info.type == HandType.SINGLE || info.type == HandType.PAIR || info.type == HandType.TRIPLE)) {
+                // check if the current played the largest possible hand, skip all if so
+                int current_max = 0;
+                for (int k = 0; k < 4; k++) {
+                    if (current_max < cards[k][cards[k].length - 1].ordinal()) {
+                        current_max = cards[k][cards[k].length - 1].ordinal();
+                    }
+                }
+                if ((info.leading.ordinal() >= current_max) && (info.type == HandType.SINGLE || info.type == HandType.PAIR || info.type == HandType.TRIPLE)) {
                     desk_cards = new Card[0];
                     desk_user = null;
                     desk_info = null;
