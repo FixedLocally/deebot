@@ -360,20 +360,6 @@ public class Game {
                     j++;
                 }
                 cards[current_turn] = new_deck;
-                // check the large card obligation and remove it if they used their largest card
-                if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
-                    System.out.println("next player has 1 card and single on desk, checking obligation!");
-                    if (info.leading.ordinal() > current_deck[current_deck.length - 1].ordinal()) {
-                        // they tried their best
-                        System.out.println("current player tried their best");
-                        largest_single_obgligation = -1;
-                    } else {
-                        System.out.printf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
-                        largest_single_obgligation = current_turn;
-                    }
-                } else {
-                    largest_single_obgligation = -1;
-                }
                 Arrays.sort(cards[current_turn]);
                 // check if the current played the largest possible hand, skip all if so
                 int current_max = 0;
@@ -391,6 +377,28 @@ public class Game {
                     desk_user = players.get(current_turn);
                     desk_info = info;
                     current_turn = (current_turn + 1) & 3;
+                }
+                // check the large card obligation and remove it if they used their largest card
+                if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
+                    System.out.println("next player has 1 card and single on desk, checking obligation!");
+                    if (info.leading.ordinal() > current_deck[current_deck.length - 1].ordinal()) {
+                        // they tried their best
+                        System.out.println("current player tried their best");
+                        largest_single_obgligation = -1;
+                    } else {
+                        System.out.printf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
+                        largest_single_obgligation = current_turn;
+                    }
+                } else {
+                    largest_single_obgligation = -1;
+                }
+                if (sort_by_suit[i]) {
+                    List<Card> _cards = Arrays.asList(cards[i]);
+                    _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
+                    bot.execute(new EditMessageText(players.get(current_turn).id(), deck_msgid[current_turn], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+                    _cards.sort(Comparator.comparingInt(Enum::ordinal));
+                } else {
+                    bot.execute(new EditMessageText(players.get(current_turn).id(), deck_msgid[current_turn], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
                 }
                 start_turn();
             }
