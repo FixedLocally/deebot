@@ -364,7 +364,7 @@ public class Game {
                     }
                     j++;
                 }
-                current_deck = cards[current_turn] = new_deck;
+                cards[current_turn] = new_deck;
                 Arrays.sort(cards[current_turn]);
                 // check if the current played the largest possible hand, skip all if so
                 int current_max = 0;
@@ -386,7 +386,7 @@ public class Game {
                 // check the large card obligation and remove it if they used their largest card
                 if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
                     System.out.println("next player has 1 card and single on desk, checking obligation!");
-                    if (info.leading.ordinal() > current_deck[current_deck.length - 1].ordinal()) {
+                    if (info.leading.ordinal() > new_deck[new_deck.length - 1].ordinal()) {
                         // they tried their best
                         System.out.println("current player tried their best");
                         largest_single_obgligation = -1;

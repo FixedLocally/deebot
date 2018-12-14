@@ -69,7 +69,8 @@ public class PlayCommand implements BaseCommand {
                     bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id()), "GAME_STARTED")).replyToMessageId(msg.messageId()));
                 } else {
                     bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id()), "GAME_STARTING")).replyToMessageId(msg.messageId()));
-                }            }
+                }
+            }
         }
     }
 }
