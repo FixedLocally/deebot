@@ -187,7 +187,6 @@ public class Game {
         System.out.println(payload);
         String[] args = payload.split(":");
         AnswerCallbackQuery answer = new AnswerCallbackQuery(callbackQuery.id());
-        cancel_future();
         switch (args[0]) {
             case "propose":
                 if (tgid != players.get(current_turn).id()) {
@@ -219,12 +218,14 @@ public class Game {
                     Card[] hand = map_to_card(args[1].split("_"));
                     play(hand, answer, callbackQuery, args);
                 }
+                cancel_future(); // cncel that auto pass job
                 break;
             case "pass":
                 if (tgid != players.get(current_turn).id()) {
                     return;
                 }
                 pass(answer, callbackQuery);
+                cancel_future(); // cncel that auto pass job
                 break;
             case "update":
                 // updates the deck
@@ -235,14 +236,7 @@ public class Game {
                     }
                 }
                 if (i < 4) {
-                    if (sort_by_suit[i]) {
-                        List<Card> _cards = Arrays.asList(cards[i]);
-                        _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-                        bot.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
-                        _cards.sort(Comparator.comparingInt(Enum::ordinal));
-                    } else {
-                        bot.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
-                    }
+                    update_deck(i);
                 }
                 break;
             case "sort":
@@ -278,6 +272,17 @@ public class Game {
 
         }
         bot.execute(answer);
+    }
+
+    private void update_deck(int i) {
+        if (sort_by_suit[i]) {
+            List<Card> _cards = Arrays.asList(cards[i]);
+            _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
+            bot.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+            _cards.sort(Comparator.comparingInt(Enum::ordinal));
+        } else {
+            bot.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
+        }
     }
 
     private void pass(AnswerCallbackQuery answer, CallbackQuery callbackQuery) {
@@ -317,7 +322,7 @@ public class Game {
         Arrays.sort(hand);
         HandInfo info = new HandInfo(hand);
         if (info.compare(desk_info) && info.type != HandType.NONE) {
-            final Card[] current_deck = cards[current_turn];
+            Card[] current_deck = cards[current_turn];
             // k hand valid, now remove cards from the player's deck and next turn
             // but check if the player is playing diamond 3 for the first turn
             if (first_round) {
@@ -359,7 +364,7 @@ public class Game {
                     }
                     j++;
                 }
-                cards[current_turn] = new_deck;
+                current_deck = cards[current_turn] = new_deck;
                 Arrays.sort(cards[current_turn]);
                 // check if the current played the largest possible hand, skip all if so
                 int current_max = 0;
@@ -392,14 +397,7 @@ public class Game {
                 } else {
                     largest_single_obgligation = -1;
                 }
-                if (sort_by_suit[i]) {
-                    List<Card> _cards = Arrays.asList(cards[i]);
-                    _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-                    bot.execute(new EditMessageText(players.get(current_turn).id(), deck_msgid[current_turn], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
-                    _cards.sort(Comparator.comparingInt(Enum::ordinal));
-                } else {
-                    bot.execute(new EditMessageText(players.get(current_turn).id(), deck_msgid[current_turn], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
-                }
+                update_deck(current_turn);
                 start_turn();
             }
         } else {
