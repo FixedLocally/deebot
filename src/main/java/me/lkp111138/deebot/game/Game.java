@@ -187,9 +187,17 @@ public class Game {
         System.out.println(payload);
         String[] args = payload.split(":");
         AnswerCallbackQuery answer = new AnswerCallbackQuery(callbackQuery.id());
+        int i = -1;
+        for (int j = 0; j < 4; j++) {
+            if (players.get(j).id() == tgid) {
+                i = j;
+                break;
+            }
+        }
         switch (args[0]) {
             case "propose":
                 if (tgid != players.get(current_turn).id()) {
+                    bot.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
                     return;
                 }
                 // we check if the player actually have the cards, if not, reset
@@ -212,32 +220,25 @@ public class Game {
                 break;
             case "play":
                 if (tgid != players.get(current_turn).id()) {
+                    bot.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
                     return;
                 }
                 if (args.length > 1) {
                     Card[] hand = map_to_card(args[1].split("_"));
                     play(hand, answer, callbackQuery, args);
+                    update_deck(i);
                 }
-                cancel_future(); // cncel that auto pass job
                 break;
             case "pass":
                 if (tgid != players.get(current_turn).id()) {
+                    bot.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
                     return;
                 }
                 pass(answer, callbackQuery);
-                cancel_future(); // cncel that auto pass job
                 break;
             case "update":
                 // updates the deck
-                int i = 0;
-                for (; i < 4; ++i) {
-                    if (players.get(i).id().equals(callbackQuery.from().id())) {
-                        break;
-                    }
-                }
-                if (i < 4) {
-                    update_deck(i);
-                }
+                update_deck(i);
                 break;
             case "sort":
                 switch (args[1]) {
@@ -292,6 +293,8 @@ public class Game {
                     bot.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), getTranslation("PASS")));
                     // notify group too
                 }
+                // we can cancel the job here cuz we no longer need auto pass for this round
+                cancel_future(); // cancel that auto pass job
                 // cancel their obligation if they dont have a eligible card
                 Card[] current_deck = cards[current_turn];
                 if (cards[(current_turn + 1) & 3].length == 1 && desk_info.type == HandType.SINGLE) {
@@ -332,6 +335,8 @@ public class Game {
                     return;
                 }
             }
+            // we can cancel the job here cuz we no longer need auto pass for this round
+            cancel_future(); // cancel that auto pass job
             first_round = false;
             all_passed = false;
             cancel_future();
@@ -630,7 +635,9 @@ public class Game {
             } catch (IllegalArgumentException ignored) {
             }
         }
-        return _proposed.toArray(new Card[0]);
+        Card[] proposed = _proposed.toArray(new Card[0]);
+        Arrays.sort(proposed);
+        return proposed;
     }
 
     private InlineKeyboardMarkup buttons_from_deck() {
@@ -694,6 +701,11 @@ public class Game {
             System.out.println("cancelled task");
             future.cancel(true);
             future = null;
+            try {
+                throw new Exception();
+            } catch (Exception e) {
+                System.out.println(e.getStackTrace()[1]);
+            }
         }
     }
 
