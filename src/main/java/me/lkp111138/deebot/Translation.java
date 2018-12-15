@@ -44,7 +44,7 @@ public class Translation {
         en.put("AFK_KILL", "Looks like everybody is away, stopping game!");
         en.put("ON_DESK_LINK", "\nOn the desk: %s by <a href=\"https://t.me/%s\">%s</a>\n");
         en.put("ON_DESK", "\nOn the desk: %s by %s\n");
-        en.put("YOUR_TURN_ANNOUNCEMENT", "It's your turn, <a href=\"tg://user?id=%d\">%s</a>");
+        en.put("YOUR_TURN_ANNOUNCEMENT", "It's your turn, <a href=\"tg://user?id=%d\">%s</a>, you have %d seconds to play your cards!");
         en.put("PICK_CARDS", "Pick your cards");
         en.put("CHOOSE_SOME_CARDS", "\u23eb Choose some cards \u23eb");
         en.put("JOIN_PROMPT", "You have %d seconds left to /join");
@@ -88,7 +88,7 @@ public class Translation {
         zh.put("AFK_KILL", "看來所有人都已離開，停止遊戲！");
         zh.put("ON_DESK_LINK", "\n目前桌上有：<a href=\"https://t.me/%2$s\">%3$s</a> 打出的 %1$s\n");
         zh.put("ON_DESK", "\n目前桌上有：%2$s 打出的 %1$s\n");
-        zh.put("YOUR_TURN_ANNOUNCEMENT", "輪到你了， <a href=\"tg://user?id=%d\">%s</a>");
+        zh.put("YOUR_TURN_ANNOUNCEMENT", "輪到你了， <a href=\"tg://user?id=%d\">%s</a>，你有 %d 秒出牌！");
         zh.put("PICK_CARDS", "按此選牌");
         zh.put("CHOOSE_SOME_CARDS", "\u23eb 請先選牌 \u23eb");
         zh.put("JOIN_PROMPT", "尚餘 %d 秒加入遊戲 /join");

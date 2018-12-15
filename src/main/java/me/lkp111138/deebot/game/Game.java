@@ -252,7 +252,7 @@ public class Game {
                         if (i < 4) {
                             List<Card> _cards = Arrays.asList(cards[i]);
                             _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-                            bot.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+                            bot.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
                             _cards.sort(Comparator.comparingInt(Enum::ordinal));
                         }
                         sort_by_suit[i] = true;
@@ -265,7 +265,7 @@ public class Game {
                             }
                         }
                         if (i < 4) {
-                            bot.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
+                            bot.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
                         }
                         sort_by_suit[i] = false;
                         break;
@@ -279,10 +279,10 @@ public class Game {
         if (sort_by_suit[i]) {
             List<Card> _cards = Arrays.asList(cards[i]);
             _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-            bot.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+            bot.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
             _cards.sort(Comparator.comparingInt(Enum::ordinal));
         } else {
-            bot.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
+            bot.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
         }
     }
 
@@ -554,7 +554,7 @@ public class Game {
 //            }
             int finalI = i;
             bot.execute(new SendMessage(players.get(i).id(), getTranslation("STARTING_DECK") + replace_all_suits(String.join(" ", cards[i]))), new EmptyCallback<>());
-            bot.execute(new SendMessage(players.get(i).id(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("UPDATE_DECK")).callbackData("update")}, new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
+            bot.execute(new SendMessage(players.get(i).id(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     deck_msgid[finalI] = response.message().messageId();
@@ -617,7 +617,7 @@ public class Game {
                     sb.append(String.format(getTranslation("ON_DESK"), replace_all_suits(String.join("  ", desk_cards)), desk_user.firstName()));
                 }
             }
-            sb.append(String.format(getTranslation("YOUR_TURN_ANNOUNCEMENT"), players.get(current_turn).id(), players.get(current_turn).firstName()));
+            sb.append(String.format(getTranslation("YOUR_TURN_ANNOUNCEMENT"), players.get(current_turn).id(), players.get(current_turn).firstName(), turn_wait));
             String msg = sb.toString();
             SendMessage send = new SendMessage(gid, msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
             group.username();
