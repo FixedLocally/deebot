@@ -30,6 +30,8 @@ public class Translation {
         en.put("NO_D3_ON_FIRST", "You must play \u2666\ufe0f 3 in the first turn");
         en.put("PLAYED_ANNOUNCEMENT_LINK", "<a href=\"https://t.me/%s\">%s</a> played ");
         en.put("PLAYED_ANNOUNCEMENT", "%s played ");
+        en.put("PASS_ANNOUNCEMENT", "%s passed");
+        en.put("PASS_ANNOUNCEMENT_LINK", "<a href=\"https://t.me/%s\">%s</a> passed");
         en.put("INVALID_HAND", "Invalid combination, please try again");
         en.put("SMALL_HAND", "Hand too small, please try again");
         en.put("WON_ANNOUNCEMENT", "<a href=\"tg://user?id=%d\">%s</a> Won!\n\n");
@@ -74,6 +76,8 @@ public class Translation {
         zh.put("NO_D3_ON_FIRST", "這是第一輪，你必須打出 \u2666\ufe0f 3");
         zh.put("PLAYED_ANNOUNCEMENT_LINK", "<a href=\"https://t.me/%s\">%s</a> 打出 ");
         zh.put("PLAYED_ANNOUNCEMENT", "%s 打出 ");
+        zh.put("PASS_ANNOUNCEMENT_LINK", "<a href=\"https://t.me/%s\">%s</a> 選擇 Pass");
+        zh.put("PASS_ANNOUNCEMENT", "%s 選擇 Pass");
         zh.put("INVALID_HAND", "組合無效，請再試");
         zh.put("SMALL_HAND", "組合太小，請再試");
         zh.put("WON_ANNOUNCEMENT", "<a href=\"tg://user?id=%d\">%s</a> 獲勝！\n\n");

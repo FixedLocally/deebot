@@ -1,6 +1,9 @@
 package me.lkp111138.deebot.game;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.pengrad.telegrambot.Callback;
+import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.CallbackQuery;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
@@ -8,10 +11,8 @@ import com.pengrad.telegrambot.model.User;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.model.request.ParseMode;
-import com.pengrad.telegrambot.request.AnswerCallbackQuery;
-import com.pengrad.telegrambot.request.EditMessageReplyMarkup;
-import com.pengrad.telegrambot.request.EditMessageText;
-import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.request.*;
+import com.pengrad.telegrambot.response.BaseResponse;
 import com.pengrad.telegrambot.response.SendResponse;
 import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
@@ -21,9 +22,7 @@ import me.lkp111138.deebot.game.card.Cards.Card;
 import me.lkp111138.deebot.misc.EmptyCallback;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -54,15 +53,17 @@ public class Game {
     private int current_msgid;
     private int largest_single_obgligation = -1;
     private String lang;
+    private JsonObject game_sequence = new JsonObject();
+    private int id;
 
     private static Map<Long, Game> games = new HashMap<>();
     private static Map<Integer, Game> uid_games = new HashMap<>();
-    private static DeeBot bot;
+    private static TelegramBot bot;
     private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(2);
     private static int[] remind_seconds = new int[]{15, 30, 60, 90, 120, 180};
     private static final int CARDS_PER_PLAYER = 13;
 
-    public static void init(DeeBot _bot) {
+    public static void init(TelegramBot _bot) {
         bot = _bot;
     }
 
@@ -87,16 +88,24 @@ public class Game {
         this.group = msg.chat();
         this.lang = DeeBot.lang(gid);
         try (Connection conn = Main.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("insert into games (gid, chips) values (?, ?)");
+            PreparedStatement stmt = conn.prepareStatement("insert into games (gid, chips) values (?, ?)", Statement.RETURN_GENERATED_KEYS);
             stmt.setLong(1, gid);
             stmt.setInt(2, chips);
-            stmt.execute();
+            stmt.executeUpdate();
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    id = generatedKeys.getInt(1);
+                }
+                else {
+                    throw new SQLException("Creating user failed, no ID obtained.");
+                }
+            }
             stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
-            bot.execute(new SendMessage(msg.chat().id(), getTranslation("ERROR") + e.getMessage()).replyToMessageId(msg.messageId()));
+            this.execute(new SendMessage(msg.chat().id(), getTranslation("ERROR") + e.getMessage()).replyToMessageId(msg.messageId()));
         }
-        bot.execute(new SendMessage(gid, String.format(getTranslation("GAME_START_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), wait)).parseMode(ParseMode.HTML), new EmptyCallback<>());
+        this.execute(new SendMessage(gid, String.format(getTranslation("GAME_START_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), wait)).parseMode(ParseMode.HTML), new EmptyCallback<>());
         games.put(gid, this);
         addPlayer(msg);
         start_time = System.currentTimeMillis() + wait * 1000;
@@ -118,23 +127,27 @@ public class Game {
             if (msg.chat().username() != null) {
                 send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("BACK_TO") + msg.chat().title()).url("https://t.me/" + msg.chat().username())}));
             }
-            bot.execute(send, new Callback<SendMessage, SendResponse>() {
+            this.execute(send, new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     if (response.isOk()) {
                         // notify group
                         // we only actually add the player to the group if we can deliver the pm
+                        if (playerCount() >= 4 || players.contains(msg.from())) {
+                            // oops, you're the 5th player bye
+                            return;
+                        }
                         players.add(msg.from());
                         uid_games.put(msg.from().id(), Game.this);
                         int count = playerCount();
-                        bot.execute(new SendMessage(msg.chat().id(), String.format(getTranslation("JOINED_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), count)).parseMode(ParseMode.HTML), new EmptyCallback<>());
+                        Game.this.execute(new SendMessage(msg.chat().id(), String.format(getTranslation("JOINED_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), count)).parseMode(ParseMode.HTML), new EmptyCallback<>());
                         if (count == 4) {
                             // k we now got 4 players
                             start();
                         }
                     } else {
                         // for some reason we cant deliver the msg to the user, so we ask them to start me in the group
-                        bot.execute(new SendMessage(msg.chat().id(), getTranslation("START_ME_FIRST")).replyToMessageId(msg.messageId()).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("START_ME")).url("https://t.me/" + System.getProperty("bot.username"))})));
+                        Game.this.execute(new SendMessage(msg.chat().id(), getTranslation("START_ME_FIRST")).replyToMessageId(msg.messageId()).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("START_ME")).url("https://t.me/" + System.getProperty("bot.username"))})));
                     }
                 }
 
@@ -171,7 +184,7 @@ public class Game {
         start_time += 30000;
         start_time = Math.min(start_time, System.currentTimeMillis() + 180000);
         long seconds = (start_time - System.currentTimeMillis() + 999) / 1000;
-        bot.execute(new SendMessage(gid, String.format(getTranslation("EXTENDED_ANNOUNCEMENT"), seconds)));
+        this.execute(new SendMessage(gid, String.format(getTranslation("EXTENDED_ANNOUNCEMENT"), seconds)));
         int i;
         i = 0;
         while (i < 6 && remind_seconds[i] < seconds) {
@@ -197,7 +210,7 @@ public class Game {
         switch (args[0]) {
             case "propose":
                 if (tgid != players.get(current_turn).id()) {
-                    bot.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
+                    this.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
                     return;
                 }
                 // we check if the player actually have the cards, if not, reset
@@ -216,11 +229,11 @@ public class Game {
                 }
                 // ok, proposal valid
                 InlineKeyboardMarkup inlineKeyboardMarkup = buttons_from_deck();
-                bot.execute(new EditMessageReplyMarkup(callbackQuery.message().chat().id(), callbackQuery.message().messageId()).replyMarkup(inlineKeyboardMarkup), new EmptyCallback<>());
+                this.execute(new EditMessageReplyMarkup(callbackQuery.message().chat().id(), callbackQuery.message().messageId()).replyMarkup(inlineKeyboardMarkup), new EmptyCallback<>());
                 break;
             case "play":
                 if (tgid != players.get(current_turn).id()) {
-                    bot.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
+                    this.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
                     return;
                 }
                 if (args.length > 1) {
@@ -231,7 +244,7 @@ public class Game {
                 break;
             case "pass":
                 if (tgid != players.get(current_turn).id()) {
-                    bot.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
+                    this.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
                     return;
                 }
                 pass(answer, callbackQuery);
@@ -252,7 +265,7 @@ public class Game {
                         if (i < 4) {
                             List<Card> _cards = Arrays.asList(cards[i]);
                             _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-                            bot.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+                            this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
                             _cards.sort(Comparator.comparingInt(Enum::ordinal));
                         }
                         sort_by_suit[i] = true;
@@ -265,24 +278,24 @@ public class Game {
                             }
                         }
                         if (i < 4) {
-                            bot.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
+                            this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
                         }
                         sort_by_suit[i] = false;
                         break;
                 }
 
         }
-        bot.execute(answer);
+        this.execute(answer);
     }
 
     private void update_deck(int i) {
         if (sort_by_suit[i]) {
             List<Card> _cards = Arrays.asList(cards[i]);
             _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-            bot.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+            this.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
             _cards.sort(Comparator.comparingInt(Enum::ordinal));
         } else {
-            bot.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
+            this.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
         }
     }
 
@@ -290,7 +303,7 @@ public class Game {
         if (!first_round) {
             if (!all_passed) {
                 if (callbackQuery != null) {
-                    bot.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), getTranslation("PASS")));
+                    this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), getTranslation("PASS")));
                     // notify group too
                 }
                 // we can cancel the job here cuz we no longer need auto pass for this round
@@ -310,6 +323,12 @@ public class Game {
                     }
                 } else {
                     largest_single_obgligation = -1;
+                }
+                User current_player = players.get(current_turn);
+                if (current_player.username() != null) {
+                    this.execute(new SendMessage(group.id(), String.format(getTranslation("PASS_ANNOUNCEMENT_LINK"), current_player.username(), current_player.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                } else {
+                    this.execute(new SendMessage(group.id(), String.format(getTranslation("PASS_ANNOUNCEMENT"), current_player.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
                 }
                 current_turn = (current_turn + 1) & 3;
                 start_turn();
@@ -346,13 +365,27 @@ public class Game {
             }
             if (callbackQuery != null) {
                 autopass_count = 0;
-                bot.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), replace_all_suits(args[1].replaceAll("_", "  "))), new EmptyCallback<>());
+                this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), replace_all_suits(args[1].replaceAll("_", "  "))), new EmptyCallback<>());
+                // lets update the game sequence
+                JsonArray array = game_sequence.getAsJsonArray("sequence");
+                if (array == null) {
+                    array = new JsonArray();
+                }
+                JsonObject turn = new JsonObject();
+                turn.addProperty("player", players.get(current_turn).id());
+                JsonArray played = new JsonArray();
+                for (Card card : hand) {
+                    played.add(card.toString());
+                }
+                turn.add("played", played);
+                array.add(turn);
+                game_sequence.add("sequence", array);
             }
             User current_player = players.get(current_turn);
             if (current_player.username() != null) {
-                bot.execute(new SendMessage(group.id(), String.format(getTranslation("PLAYED_ANNOUNCEMENT_LINK"), current_player.username(), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                this.execute(new SendMessage(group.id(), String.format(getTranslation("PLAYED_ANNOUNCEMENT_LINK"), current_player.username(), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
             } else {
-                bot.execute(new SendMessage(group.id(), String.format(getTranslation("PLAYED_ANNOUNCEMENT"), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                this.execute(new SendMessage(group.id(), String.format(getTranslation("PLAYED_ANNOUNCEMENT"), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
             }
             if (current_deck.length == hand.length) {
                 // player won
@@ -463,7 +496,7 @@ public class Game {
         }
         sb.append(getTranslation("NEW_GAME_PROMPT"));
         String msg = sb.toString();
-        bot.execute(new SendMessage(group.id(), msg).parseMode(ParseMode.HTML));
+        this.execute(new SendMessage(group.id(), msg).parseMode(ParseMode.HTML));
         started = false;
         kill();
         // update database chip records
@@ -479,6 +512,22 @@ public class Game {
                 stmt.execute();
                 stmt.close();
             }
+            JsonArray turnout = new JsonArray();
+            for (int i = 0; i < 4; ++i) {
+                JsonObject _turnout = new JsonObject();
+                _turnout.addProperty("player", players.get(i).id());
+                _turnout.addProperty("offset", offsets[i]);
+                JsonArray deck = new JsonArray();
+                for (Card card : cards[i]) {
+                    deck.add(card.toString());
+                }
+            }
+            game_sequence.add("turnout", turnout);
+            PreparedStatement stmt = conn.prepareStatement("update games set game_sequence=? where id=?");
+            stmt.setInt(2, id);
+            stmt.setString(1, game_sequence.toString());
+            stmt.execute();
+            stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -487,14 +536,14 @@ public class Game {
     public void kill() {
         if (started) {
             // the game is forcibly killed, kill aht buttons of the current player too
-            bot.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("GAME_ENDED")));
+            this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("GAME_ENDED")));
             for (int i = 0; i < 4; ++i) {
-                bot.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
+                this.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
             }
         }
         cancel_future();
         // remove this game instance
-        bot.execute(new SendMessage(gid, getTranslation("GAME_ENDED_ANNOUNCEMENT")), new EmptyCallback<>());
+        this.execute(new SendMessage(gid, getTranslation("GAME_ENDED_ANNOUNCEMENT")), new EmptyCallback<>());
         for (int i = 0; i < playerCount(); i++) {
             uid_games.remove(players.get(i).id());
         }
@@ -544,7 +593,21 @@ public class Game {
             order[i] = String.format("<a href=\"tg://user?id=%d\">%s</a>", players.get(i).id(), players.get(i).firstName());
         }
         cards[0][0] = Card.D3;
-        bot.execute(new SendMessage(gid, String.join(" > ", order)).parseMode(ParseMode.HTML), new EmptyCallback<>());
+        JsonArray starting_decks = new JsonArray();
+        int j = 0;
+        for (Card[] deck : cards) {
+            JsonObject current = new JsonObject();
+            current.addProperty("player", players.get(j).id());
+            ++j;
+            JsonArray _cards = new JsonArray();
+            for (Card card : deck) {
+                _cards.add(card.toString());
+            }
+            current.add("deck", _cards);
+            starting_decks.add(current);
+        }
+        game_sequence.add("starting_decks", starting_decks);
+        this.execute(new SendMessage(gid, String.join(" > ", order)).parseMode(ParseMode.HTML), new EmptyCallback<>());
         // pm players with their cards
         for (int i = 0; i < 4; i++) {
             // 0th player gets 0th deck, etc
@@ -553,8 +616,8 @@ public class Game {
 //                sb.append(cards[i][j].name());
 //            }
             int finalI = i;
-            bot.execute(new SendMessage(players.get(i).id(), getTranslation("STARTING_DECK") + replace_all_suits(String.join(" ", cards[i]))), new EmptyCallback<>());
-            bot.execute(new SendMessage(players.get(i).id(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(i).id(), getTranslation("STARTING_DECK") + replace_all_suits(String.join(" ", cards[i]))), new EmptyCallback<>());
+            this.execute(new SendMessage(players.get(i).id(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     deck_msgid[finalI] = response.message().messageId();
@@ -584,7 +647,7 @@ public class Game {
             pass(new AnswerCallbackQuery("0"), null);
         } else {
             // prompt the player for cards
-            bot.execute(new SendMessage(players.get(current_turn).id(), getTranslation("YOUR_TURN_PROMPT") + (all_passed || first_round ? getTranslation("THERE_IS_NOTHING") : (": " + replace_all_suits(String.join("  ", desk_cards))))).replyMarkup(buttons_from_deck()), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(current_turn).id(), getTranslation("YOUR_TURN_PROMPT") + (all_passed || first_round ? getTranslation("THERE_IS_NOTHING") : (": " + replace_all_suits(String.join("  ", desk_cards))))).replyMarkup(buttons_from_deck()), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     current_msgid = response.message().messageId();
@@ -622,7 +685,7 @@ public class Game {
             SendMessage send = new SendMessage(gid, msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
             group.username();
             send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("PICK_CARDS")).url("https://t.me/" + System.getProperty("bot.username"))}));
-            bot.execute(send);
+            this.execute(send);
         }
     }
 
@@ -681,7 +744,7 @@ public class Game {
     private void remind() {
         System.out.println("firing remind task");
         long seconds = (start_time - System.currentTimeMillis()) / 1000;
-        bot.execute(new SendMessage(gid, String.format(getTranslation("JOIN_PROMPT"), Math.round(seconds / 15.0) * 15)));
+        this.execute(new SendMessage(gid, String.format(getTranslation("JOIN_PROMPT"), Math.round(seconds / 15.0) * 15)));
         int i;
         i = 0;
         while (remind_seconds[i] < seconds) {
@@ -726,7 +789,7 @@ public class Game {
         // time is up for current round
         System.out.println("firing auto pass job");
         ++autopass_count;
-        bot.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("TIMES_UP")));
+        this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("TIMES_UP")));
         if (autopass_count < 8) {
             if (first_round) {
                 play(new Cards.Card[]{Cards.Card.D3}, new AnswerCallbackQuery("0"), null, new String[]{"play", "D3"});
@@ -739,9 +802,43 @@ public class Game {
                 }
             }
         } else {
-            bot.execute(new SendMessage(gid, getTranslation("AFK_KILL")));
+            this.execute(new SendMessage(gid, getTranslation("AFK_KILL")));
             kill();
         }
+    }
+
+    private <T extends BaseRequest, R extends BaseResponse> void execute(T request) {
+        bot.execute(request, new Callback<T, R>() {
+            @Override
+            public void onResponse(T request, R response) {
+                // do nothing
+            }
+
+            @Override
+            public void onFailure(T request, IOException e) {
+                // retry
+                Game.this.execute(request);
+            }
+        });
+    }
+
+    private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback) {
+        System.out.println("executing " + request.hashCode());
+        bot.execute(request, new Callback<T, R>() {
+            @Override
+            public void onResponse(T request, R response) {
+                System.out.println("executed " + request.hashCode());
+                callback.onResponse(request, response);
+            }
+
+            @Override
+            public void onFailure(T request, IOException e) {
+                callback.onFailure(request, e);
+                System.out.println("failed " + request.hashCode());
+                System.out.printf("%s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
+                Game.this.execute(request, callback);
+            }
+        });
     }
 
 

@@ -16,15 +16,20 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeeBot extends TelegramBot {
-    private BaseCommand fallback = new FallbackCommand();
-    private Map<String, BaseCommand> commands = new HashMap<>();
+public class DeeBot {
+    private final BaseCommand fallback = new FallbackCommand();
+    private final Map<String, BaseCommand> commands = new HashMap<>();
+    private final TelegramBot bot;
 
     private static Map<Long, String> group_lang = new HashMap<>();
 
-    DeeBot(String botToken) {
-        super(botToken);
-        this.setUpdatesListener(list -> {
+    DeeBot(TelegramBot bot) {
+        this.bot = bot;
+        init();
+    }
+
+    private void init() {
+        this.bot.setUpdatesListener(list -> {
             for (Update update : list) {
                 processUpdate(update);
             }
@@ -56,7 +61,7 @@ public class DeeBot extends TelegramBot {
                     return;
                 }
                 try {
-                    commands.getOrDefault(cmd[0], fallback).respond(this, msg, segments);
+                    commands.getOrDefault(cmd[0], fallback).respond(bot, msg, segments);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

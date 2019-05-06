@@ -1,7 +1,9 @@
 package me.lkp111138.deebot;
 
 
+import com.pengrad.telegrambot.TelegramBot;
 import me.lkp111138.deebot.game.Game;
+import okhttp3.OkHttpClient;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -31,7 +33,9 @@ public class Main {
         }
         Class.forName("com.mysql.jdbc.Driver");
         conn = DriverManager.getConnection(String.format("jdbc:mysql://%s/%s?user=%s&password=%s&useSSL=false", System.getProperty("db.host"), System.getProperty("db.name"), System.getProperty("db.user"), System.getProperty("db.pwd")));
-        DeeBot bot = new DeeBot(System.getProperty("bot.token"));
+        OkHttpClient retrying_client = new OkHttpClient.Builder().retryOnConnectionFailure(true).build();
+        TelegramBot bot = new TelegramBot.Builder(System.getProperty("bot.token")).okHttpClient(retrying_client).build();
+        new DeeBot(bot);
         Game.init(bot);
         System.out.println("Initialization complete\n");
     }
