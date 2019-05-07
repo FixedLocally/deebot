@@ -254,38 +254,36 @@ public class Game {
                 update_deck(i);
                 break;
             case "sort":
-                switch (args[1]) {
-                    case "suit":
-                        i = 0;
-                        for (; i < 4; ++i) {
-                            if (players.get(i).id().equals(callbackQuery.from().id())) {
-                                break;
-                            }
-                        }
-                        if (i < 4) {
-                            List<Card> _cards = Arrays.asList(cards[i]);
-                            _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-                            this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
-                            _cards.sort(Comparator.comparingInt(Enum::ordinal));
-                        }
-                        sort_by_suit[i] = true;
-                        break;
-                    default:
-                        i = 0;
-                        for (; i < 4; ++i) {
-                            if (players.get(i).id().equals(callbackQuery.from().id())) {
-                                break;
-                            }
-                        }
-                        if (i < 4) {
-                            this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
-                        }
-                        sort_by_suit[i] = false;
-                        break;
+                if ("suit".equals(args[1])) {
+                    i = getPlayerIndexFromQuery(callbackQuery);
+                    if (i < 4) {
+                        List<Card> _cards = Arrays.asList(cards[i]);
+                        _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
+                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+                        _cards.sort(Comparator.comparingInt(Enum::ordinal));
+                    }
+                    sort_by_suit[i] = true;
+                } else {
+                    i = getPlayerIndexFromQuery(callbackQuery);
+                    if (i < 4) {
+                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
+                    }
+                    sort_by_suit[i] = false;
                 }
 
         }
         this.execute(answer);
+    }
+
+    private int getPlayerIndexFromQuery(CallbackQuery callbackQuery) {
+        int i;
+        i = 0;
+        for (; i < 4; ++i) {
+            if (players.get(i).id().equals(callbackQuery.from().id())) {
+                break;
+            }
+        }
+        return i;
     }
 
     private void update_deck(int i) {
@@ -415,25 +413,28 @@ public class Game {
                     desk_cards = new Card[0];
                     desk_user = null;
                     desk_info = null;
+                    // if this skip all happens then obviously the player has used their largest card
+                    // so they shouldnt be subject to largest card obligation
+                    largest_single_obgligation = -1;
                 } else {
                     desk_cards = hand;
                     desk_user = players.get(current_turn);
                     desk_info = info;
                     current_turn = (current_turn + 1) & 3;
-                }
-                // check the large card obligation and remove it if they used their largest card
-                if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
-                    System.out.println("next player has 1 card and single on desk, checking obligation!");
-                    if (info.leading.ordinal() > new_deck[new_deck.length - 1].ordinal()) {
-                        // they tried their best
-                        System.out.println("current player tried their best");
-                        largest_single_obgligation = -1;
+                    // check the large card obligation and remove it if they used their largest card
+                    if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
+                        System.out.println("next player has 1 card and single on desk, checking obligation!");
+                        if (info.leading.ordinal() > new_deck[new_deck.length - 1].ordinal()) {
+                            // they tried their best
+                            System.out.println("current player tried their best");
+                            largest_single_obgligation = -1;
+                        } else {
+                            System.out.printf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
+                            largest_single_obgligation = current_turn;
+                        }
                     } else {
-                        System.out.printf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
-                        largest_single_obgligation = current_turn;
+                        largest_single_obgligation = -1;
                     }
-                } else {
-                    largest_single_obgligation = -1;
                 }
                 update_deck(current_turn);
                 start_turn();
@@ -521,6 +522,8 @@ public class Game {
                 for (Card card : cards[i]) {
                     deck.add(card.toString());
                 }
+                _turnout.add("remaining", deck);
+                turnout.add(_turnout);
             }
             game_sequence.add("turnout", turnout);
             PreparedStatement stmt = conn.prepareStatement("update games set game_sequence=? where id=?");
@@ -807,40 +810,44 @@ public class Game {
         }
     }
 
-    private <T extends BaseRequest, R extends BaseResponse> void execute(T request) {
-        bot.execute(request, new Callback<T, R>() {
-            @Override
-            public void onResponse(T request, R response) {
-                // do nothing
-            }
-
-            @Override
-            public void onFailure(T request, IOException e) {
-                // retry
-                Game.this.execute(request);
-            }
-        });
+    private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request) {
+        this.execute(request, null);
     }
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback) {
+        this.execute(request, callback, 0);
+    }
+
+    private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback, int fail_count) {
         System.out.println("executing " + request.hashCode());
         bot.execute(request, new Callback<T, R>() {
             @Override
             public void onResponse(T request, R response) {
                 System.out.println("executed " + request.hashCode());
-                callback.onResponse(request, response);
+                if (callback != null) {
+                    callback.onResponse(request, response);
+                }
             }
 
             @Override
             public void onFailure(T request, IOException e) {
-                callback.onFailure(request, e);
+                if (callback != null) {
+                    callback.onFailure(request, e);
+                }
                 System.out.println("failed " + request.hashCode());
                 System.out.printf("%s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
-                Game.this.execute(request, callback);
+                if (fail_count < 5) { // linear backoff, max 5 retries
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(5000 * fail_count + 5000);
+                        } catch (InterruptedException ignored) {
+                        }
+                        Game.this.execute(request, callback, fail_count + 1);
+                    }).start();
+                }
             }
         });
     }
-
 
     public static class HandInfo {
         final HandType type;
