@@ -51,6 +51,12 @@ public class DeeBot {
         CallbackQuery query = update.callbackQuery();
         if (msg != null) {
             MessageEntity[] entities = msg.entities();
+            int sender = msg.from().id();
+            // blacklist
+            switch (sender) {
+                case 290485640:
+                    return;
+            }
             if (entities != null && entities.length > 0 && entities[0].type().equals(MessageEntity.Type.bot_command)) {
                 int offset = entities[0].offset();
                 String command = msg.text().substring(offset + 1);

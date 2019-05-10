@@ -420,7 +420,6 @@ public class Game {
                     desk_cards = hand;
                     desk_user = players.get(current_turn);
                     desk_info = info;
-                    current_turn = (current_turn + 1) & 3;
                     // check the large card obligation and remove it if they used their largest card
                     if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
                         System.out.println("next player has 1 card and single on desk, checking obligation!");
@@ -435,6 +434,7 @@ public class Game {
                     } else {
                         largest_single_obgligation = -1;
                     }
+                    current_turn = (current_turn + 1) & 3;
                 }
                 update_deck(current_turn);
                 start_turn();

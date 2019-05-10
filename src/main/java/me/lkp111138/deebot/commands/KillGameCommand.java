@@ -20,8 +20,8 @@ public class KillGameCommand implements BaseCommand {
         }
         switch (msg.from().id()) {
             // blacklist
-            case 401742123:
-                break;
+//            case 401742123:
+//                break;
                 // whitelist
             case 389061708:
                 // kill game
