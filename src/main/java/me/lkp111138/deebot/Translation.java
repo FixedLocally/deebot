@@ -53,7 +53,7 @@ public class Translation {
         en.put("NO_GAME_TO_JOIN", "There is no game to join here. /play to start one.");
         en.put("GAME_STARTING", "A game is about to start! Type /join to join.");
         en.put("GAME_STARTED", "The game has already started! Wait for it to finish before starting a new one.");
-        en.put("GAME_START_ANNOUNCEMENT", "[ <a href=\"tg://user?id=%d\">%s</a> ] has started a new game! You have %d seconds to /join");
+        en.put("GAME_START_ANNOUNCEMENT", "[ <a href=\"tg://user?id=%d\">%s</a> ] has started a new game! You have %d seconds to /join計 Place：%s\n炒：%s\n包牌：%s");
         en.put("NOTHING_ON_DESK", "\nThere is nothing on the desk.\n");
         en.put("UPDATE_DECK", "Update deck");
         en.put("SORT_SUIT", "Sort by suit");
@@ -99,7 +99,7 @@ public class Translation {
         zh.put("NO_GAME_TO_JOIN", "目前沒有遊戲進行中，按 /play 開新遊戲");
         zh.put("GAME_STARTING", "遊戲即將開始！ 按 /join 加入。");
         zh.put("GAME_STARTED", "遊戲已開始！請等遊戲結束後再開新遊戲。");
-        zh.put("GAME_START_ANNOUNCEMENT", "[ <a href=\"tg://user?id=%d\">%s</a> ] 已開始新遊戲！你有 %d 秒加入 /join");
+        zh.put("GAME_START_ANNOUNCEMENT", "[ <a href=\"tg://user?id=%d\">%s</a> ] 已開始新遊戲！你有 %d 秒加入 /join\n\n計 Place：%s\n炒：%s\n包牌：%s");
         zh.put("NOTHING_ON_DESK", "\n桌面上什麼也沒有。\n");
         zh.put("UPDATE_DECK", "更新手牌");
         zh.put("SORT_SUIT", "按花色排序");

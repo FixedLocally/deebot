@@ -105,7 +105,8 @@ public class Game {
             e.printStackTrace();
             this.execute(new SendMessage(msg.chat().id(), getTranslation("ERROR") + e.getMessage()).replyToMessageId(msg.messageId()));
         }
-        this.execute(new SendMessage(gid, String.format(getTranslation("GAME_START_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), wait)).parseMode(ParseMode.HTML), new EmptyCallback<>());
+        String[] check_cross = new String[]{"\uD83D\uDEAB", "\u2705"};
+        this.execute(new SendMessage(gid, String.format(getTranslation("GAME_START_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), wait, check_cross[groupInfo.collect_place ? 1 : 0], check_cross[groupInfo.fry ? 1 : 0], check_cross[1])).parseMode(ParseMode.HTML), new EmptyCallback<>());
         games.put(gid, this);
         addPlayer(msg);
         start_time = System.currentTimeMillis() + wait * 1000;

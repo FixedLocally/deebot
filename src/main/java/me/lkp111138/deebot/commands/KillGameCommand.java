@@ -34,7 +34,7 @@ public class KillGameCommand implements BaseCommand {
                     @Override
                     public void onResponse(GetChatMember request, GetChatMemberResponse response) {
                         ChatMember chatMember = response.chatMember();
-                        if (chatMember.canChangeInfo() || chatMember.canInviteUsers() || chatMember.canRestrictMembers() || chatMember.canPromoteMembers() || chatMember.canDeleteMessages() || chatMember.canPinMessages()) {
+                        if (chatMember.status() == ChatMember.Status.administrator || chatMember.status() == ChatMember.Status.creator) {
                             // kill game
                             if (Game.byGroup(msg.chat().id()) != null) {
                                 Game.byGroup(msg.chat().id()).kill();
