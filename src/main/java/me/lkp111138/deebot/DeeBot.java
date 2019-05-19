@@ -55,6 +55,10 @@ public class DeeBot {
             // blacklist
             switch (sender) {
                 case 290485640:
+                case 654217056:
+                case 665228326:
+                case 246596279:
+                case 37622951:
                     return;
             }
             if (entities != null && entities.length > 0 && entities[0].type().equals(MessageEntity.Type.bot_command)) {
