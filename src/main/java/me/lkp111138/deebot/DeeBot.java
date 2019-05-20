@@ -92,7 +92,7 @@ public class DeeBot {
     public static String lang(long gid) {
         return group_lang.computeIfAbsent(gid, aLong -> {
             try (Connection conn = Main.getConnection()) {
-                PreparedStatement stmt = conn.prepareStatement("select lang from groups where gid=?");
+                PreparedStatement stmt = conn.prepareStatement("select lang from `groups` where gid=?");
                 stmt.setLong(1, gid);
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) {

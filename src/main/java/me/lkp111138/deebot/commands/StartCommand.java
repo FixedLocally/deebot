@@ -16,7 +16,7 @@ public class StartCommand implements BaseCommand {
         // init the user if needed
         // TODO
         try (Connection conn = Main.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("REPLACE INTO tg_users (tgid, username) VALUES (?, ?)");
+            PreparedStatement stmt = conn.prepareStatement("INSERT IGNORE INTO tg_users (tgid, username) VALUES (?, ?)");
             stmt.setInt(1, msg.from().id());
             stmt.setString(2, msg.from().username());
             stmt.execute();
