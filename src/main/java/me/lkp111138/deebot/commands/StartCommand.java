@@ -14,7 +14,6 @@ public class StartCommand implements BaseCommand {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         // init the user if needed
-        // TODO
         try (Connection conn = Main.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement("INSERT IGNORE INTO tg_users (tgid, username) VALUES (?, ?)");
             stmt.setInt(1, msg.from().id());

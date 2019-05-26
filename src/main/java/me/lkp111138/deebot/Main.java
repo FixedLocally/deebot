@@ -10,10 +10,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
-import java.util.HashMap;
 
 public class Main {
     private static Connection conn;
+    public static final int BOT_OWNER = 389061708;
 
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
         // read config
@@ -24,7 +24,9 @@ public class Main {
             while ((line = reader.readLine()) != null) {
                 System.out.println(line);
                 String[] segments = line.split("=", 2);
-                System.setProperty(segments[0].trim(), segments[1].trim());
+                if (segments.length == 2 && !segments[0].startsWith("#")) {
+                    System.setProperty(segments[0].trim(), segments[1].trim());
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -55,7 +57,7 @@ public class Main {
                 return conn;
             } catch (SQLException e1) {
                 System.err.println("Couldn't reconnect!");
-                e.printStackTrace();
+                e1.printStackTrace();
                 throw e;
             }
         }

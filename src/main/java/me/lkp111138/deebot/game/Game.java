@@ -195,13 +195,14 @@ public class Game {
         schedule(this::remind, (seconds - remind_seconds[--i]) * 1000);
     }
 
-    public void callback(CallbackQuery callbackQuery) {
+    public boolean callback(CallbackQuery callbackQuery) {
         int tgid = callbackQuery.from().id();
         String payload = callbackQuery.data();
         System.out.println(payload);
         String[] args = payload.split(":");
         AnswerCallbackQuery answer = new AnswerCallbackQuery(callbackQuery.id());
         int i = -1;
+        boolean processed = false;
         for (int j = 0; j < 4; j++) {
             if (players.get(j).id() == tgid) {
                 i = j;
@@ -212,7 +213,7 @@ public class Game {
             case "propose":
                 if (tgid != players.get(current_turn).id()) {
                     this.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
-                    return;
+                    return true;
                 }
                 // we check if the player actually have the cards, if not, reset
                 Card[] proposed = new Card[0];
@@ -231,28 +232,32 @@ public class Game {
                 // ok, proposal valid
                 InlineKeyboardMarkup inlineKeyboardMarkup = buttons_from_deck();
                 this.execute(new EditMessageReplyMarkup(callbackQuery.message().chat().id(), callbackQuery.message().messageId()).replyMarkup(inlineKeyboardMarkup), new EmptyCallback<>());
+                processed = true;
                 break;
             case "play":
                 if (tgid != players.get(current_turn).id()) {
                     this.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
-                    return;
+                    return true;
                 }
                 if (args.length > 1) {
                     Card[] hand = map_to_card(args[1].split("_"));
                     play(hand, answer, callbackQuery, args);
                     update_deck(i);
                 }
+                processed = true;
                 break;
             case "pass":
                 if (tgid != players.get(current_turn).id()) {
                     this.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
-                    return;
+                    return true;
                 }
                 pass(answer, callbackQuery);
+                processed = true;
                 break;
             case "update":
                 // updates the deck
                 update_deck(i);
+                processed = true;
                 break;
             case "sort":
                 if ("suit".equals(args[1])) {
@@ -271,9 +276,11 @@ public class Game {
                     }
                     sort_by_suit[i] = false;
                 }
-
+                processed = true;
+                break;
         }
         this.execute(answer);
+        return processed;
     }
 
     private int getPlayerIndexFromQuery(CallbackQuery callbackQuery) {
@@ -742,7 +749,7 @@ public class Game {
     }
 
     private String replace_all_suits(String in) {
-        return in.replaceAll("D", " \u2666\ufe0f ").replaceAll("C", " \u2663\ufe0f").replaceAll("H", " \u2764\ufe0f ").replaceAll("S", " \u2660\ufe0f ").trim();
+        return in.replaceAll("D", " \u2666\ufe0f ").replaceAll("C", " \u2663\ufe0f ").replaceAll("H", " \u2764\ufe0f ").replaceAll("S", " \u2660\ufe0f ").trim();
     }
 
     private void remind() {

@@ -6,6 +6,7 @@ import com.pengrad.telegrambot.model.ChatMember;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.request.GetChatMember;
 import com.pengrad.telegrambot.response.GetChatMemberResponse;
+import me.lkp111138.deebot.Main;
 import me.lkp111138.deebot.game.Game;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class KillGameCommand implements BaseCommand {
 //            case 401742123:
 //                break;
                 // whitelist
-            case 389061708:
+            case Main.BOT_OWNER:
                 // kill game
                 if (Game.byGroup(msg.chat().id()) != null) {
                     Game.byGroup(msg.chat().id()).kill();

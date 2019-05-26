@@ -43,6 +43,7 @@ public class DeeBot {
         commands.put("stats", new StatCommand());
         commands.put("killgame", new KillGameCommand());
         commands.put("extend", new ExtendCommand());
+        commands.put("config", new ConfigCommand());
     }
 
     private void processUpdate(Update update) {
@@ -60,6 +61,17 @@ public class DeeBot {
                 case 246596279:
                 case 37622951:
                     return;
+            }
+            if (msg.migrateFromChatId() != null) {
+                // migrate settings if any
+                try (Connection conn = Main.getConnection()) {
+                    PreparedStatement stmt = conn.prepareStatement("update `groups` set gid=? where gid=?");
+                    stmt.setLong(1, msg.migrateFromChatId());
+                    stmt.setLong(2, msg.chat().id());
+                    stmt.execute();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
             if (entities != null && entities.length > 0 && entities[0].type().equals(MessageEntity.Type.bot_command)) {
                 int offset = entities[0].offset();
@@ -81,10 +93,15 @@ public class DeeBot {
             Game g = Game.byUser(query.from().id());
             if (g != null) {
                 try {
-                    g.callback(query);
+                    if (g.callback(query)) {
+                        return;
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+            if (ConfigCommand.callback(bot, query)) {
+                return;
             }
         }
     }
