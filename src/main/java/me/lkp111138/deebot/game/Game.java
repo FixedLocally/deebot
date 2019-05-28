@@ -662,7 +662,9 @@ public class Game {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     current_msgid = response.message().messageId();
-
+                    // schedule when we are sure that the msg is sent successfully
+                    System.out.println("scheduled auto pass job");
+                    schedule(Game.this::autopass, turn_wait * 1000);
                 }
 
                 @Override
@@ -670,8 +672,6 @@ public class Game {
                     e.printStackTrace();
                 }
             });
-            System.out.println("scheduled auto pass job");
-            schedule(this::autopass, turn_wait * 1000 + 5000);
             // notify group
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 4; ++i) {
@@ -827,11 +827,9 @@ public class Game {
     }
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback, int fail_count) {
-        System.out.println("executing " + request.hashCode());
         bot.execute(request, new Callback<T, R>() {
             @Override
             public void onResponse(T request, R response) {
-                System.out.println("executed " + request.hashCode());
                 if (callback != null) {
                     callback.onResponse(request, response);
                 }
@@ -842,7 +840,6 @@ public class Game {
                 if (callback != null) {
                     callback.onFailure(request, e);
                 }
-                System.out.println("failed " + request.hashCode());
                 System.out.printf("%s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
                 if (fail_count < 5) { // linear backoff, max 5 retries
                     new Thread(() -> {
