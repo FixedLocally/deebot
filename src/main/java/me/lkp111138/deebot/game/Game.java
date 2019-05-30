@@ -110,7 +110,7 @@ public class Game {
             return;
         }
         try (Connection conn = Main.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement("insert into games (gid, chips) values (?, ?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement stmt = conn.prepareStatement("INSERT INTO games (gid, chips) values (?, ?)", Statement.RETURN_GENERATED_KEYS);
             stmt.setLong(1, gid);
             stmt.setInt(2, chips);
             stmt.executeUpdate();
