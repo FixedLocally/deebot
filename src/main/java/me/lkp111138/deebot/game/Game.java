@@ -66,6 +66,8 @@ public class Game {
     private static final int CARDS_PER_PLAYER = 13;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
+    public static boolean maint_mode = false; // true=disallow starting games
+
     public static void init(TelegramBot _bot) {
         bot = _bot;
     }
@@ -76,6 +78,18 @@ public class Game {
 
     public static Game byUser(int tgid) {
         return uid_games.get(tgid);
+    }
+
+    public static RunInfo runInfo() {
+        int total = games.size();
+        int players = uid_games.size();
+        int running = 0;
+        for(Game game : games.values()) {
+            if (game.started) {
+                ++running;
+            }
+        }
+        return new RunInfo(running, total, players);
     }
 
     public Game(Message msg, int chips, int wait, GroupInfo groupInfo) throws ConcurrentGameException {
@@ -90,6 +104,11 @@ public class Game {
         this.groupInfo = groupInfo;
         this.group = msg.chat();
         this.lang = DeeBot.lang(gid);
+        if (maint_mode) {
+            // disallow starting games
+            this.execute(new SendMessage(gid, String.format(getTranslation("MAINT_MODE_NOTICE"), msg.from().id(), msg.from().firstName())).parseMode(ParseMode.HTML), new EmptyCallback<>());
+            return;
+        }
         try (Connection conn = Main.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement("insert into games (gid, chips) values (?, ?)", Statement.RETURN_GENERATED_KEYS);
             stmt.setLong(1, gid);
@@ -120,6 +139,7 @@ public class Game {
         }
         this.log("scheduled remind task");
         schedule(this::remind, (wait - remind_seconds[--i]) * 1000);
+        this.logf("Game created in %s [%d]", msg.chat().title(), msg.chat().id());
     }
 
     public void addPlayer(Message msg) {
@@ -145,6 +165,7 @@ public class Game {
                         uid_games.put(msg.from().id(), Game.this);
                         int count = playerCount();
                         Game.this.execute(new SendMessage(msg.chat().id(), String.format(getTranslation("JOINED_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), count)).parseMode(ParseMode.HTML), new EmptyCallback<>());
+                        Game.this.logf("%d / 4 players joined", count);
                         if (count == 4) {
                             // k we now got 4 players
                             start();
@@ -573,6 +594,7 @@ public class Game {
         }
         // shuffle deck
         // for each hand, sort them so we can easily find diamond 3
+        this.log("Game starting");
         while (true) {
             Card[] deck = Cards.shuffle();
             for (int i = 0; i < 4; i++) {
@@ -832,7 +854,7 @@ public class Game {
         _objs[0] = id;
         _objs[1] = date;
         System.arraycopy(objs, 0, _objs, 2, objs.length);
-        System.out.printf("[Game %d][%s] %s" + format + "\n", _objs);
+        System.out.printf("[Game %d][%s] " + format + "\n", _objs);
     }
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request) {
@@ -1029,6 +1051,18 @@ public class Game {
             //                Game.this.logf("%s %s %s %s %s true\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
             //                Game.this.logf("%s %s %s %s %s false\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
             return cards[2].getFace() != 10;
+        }
+    }
+
+    public static class RunInfo {
+        public final int running_count;
+        public final int game_count;
+        public final int player_count;
+
+        RunInfo(int running_count, int game_count, int player_count) {
+            this.running_count = running_count;
+            this.game_count = game_count;
+            this.player_count = player_count;
         }
     }
 
