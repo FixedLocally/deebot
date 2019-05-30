@@ -27,7 +27,7 @@ public class JoinCommand implements BaseCommand {
                 stmt.execute();
             } catch (SQLException e) {
                 e.printStackTrace();
-                bot.execute(new SendMessage(msg.chat().id(), "An error occured: " + e.getMessage()).replyToMessageId(msg.messageId()));
+                bot.execute(new SendMessage(msg.chat().id(), "An error occurred: " + e.getMessage()).replyToMessageId(msg.messageId()));
             }
         } else {
             g.addPlayer(msg);

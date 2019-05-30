@@ -23,7 +23,9 @@ import me.lkp111138.deebot.misc.EmptyCallback;
 
 import java.io.IOException;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -62,6 +64,7 @@ public class Game {
     private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(2);
     private static int[] remind_seconds = new int[]{15, 30, 60, 90, 120, 180};
     private static final int CARDS_PER_PLAYER = 13;
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     public static void init(TelegramBot _bot) {
         bot = _bot;
@@ -97,7 +100,7 @@ public class Game {
                     id = generatedKeys.getInt(1);
                 }
                 else {
-                    throw new SQLException("Creating user failed, no ID obtained.");
+                    throw new SQLException("Creating game failed, no ID obtained.");
                 }
             }
             stmt.close();
@@ -106,7 +109,7 @@ public class Game {
             this.execute(new SendMessage(msg.chat().id(), getTranslation("ERROR") + e.getMessage()).replyToMessageId(msg.messageId()));
         }
         String[] check_cross = new String[]{"\uD83D\uDEAB", "\u2705"};
-        this.execute(new SendMessage(gid, String.format(getTranslation("GAME_START_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), wait, check_cross[groupInfo.collect_place ? 1 : 0], check_cross[groupInfo.fry ? 1 : 0], check_cross[1])).parseMode(ParseMode.HTML), new EmptyCallback<>());
+        this.execute(new SendMessage(gid, String.format(getTranslation("GAME_START_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), wait, check_cross[groupInfo.collect_place ? 1 : 0], check_cross[groupInfo.fry ? 1 : 0], check_cross[1], id)).parseMode(ParseMode.HTML), new EmptyCallback<>());
         games.put(gid, this);
         addPlayer(msg);
         start_time = System.currentTimeMillis() + wait * 1000;
@@ -115,7 +118,7 @@ public class Game {
         while (wait > remind_seconds[i]) {
             ++i;
         }
-        System.out.println("scheduled remind task");
+        this.log("scheduled remind task");
         schedule(this::remind, (wait - remind_seconds[--i]) * 1000);
     }
 
@@ -191,14 +194,13 @@ public class Game {
         while (i < 6 && remind_seconds[i] < seconds) {
             ++i;
         }
-        System.out.println("scheduled remind task");
+        this.log("scheduled remind task");
         schedule(this::remind, (seconds - remind_seconds[--i]) * 1000);
     }
 
     public boolean callback(CallbackQuery callbackQuery) {
         int tgid = callbackQuery.from().id();
         String payload = callbackQuery.data();
-        System.out.println(payload);
         String[] args = payload.split(":");
         AnswerCallbackQuery answer = new AnswerCallbackQuery(callbackQuery.id());
         int i = -1;
@@ -317,14 +319,14 @@ public class Game {
                 // cancel their obligation if they dont have a eligible card
                 Card[] current_deck = cards[current_turn];
                 if (cards[(current_turn + 1) & 3].length == 1 && desk_info.type == HandType.SINGLE) {
-                    System.out.println("next player has 1 card and single on desk, checking obligation!");
+                    this.log("next player has 1 card and single on desk, checking obligation!");
                     if (current_deck[current_deck.length - 1].ordinal() < desk_info.leading.ordinal()) {
                         // they cant even try
-                        System.out.println("they cant even try");
+                        this.log("they cant even try");
                         largest_single_obgligation = -1;
                     } else {
                         // they didnt try
-                        System.out.println("they didnt try their best");
+                        this.log("they didnt try their best");
                         largest_single_obgligation = current_turn;
                     }
                 } else {
@@ -430,13 +432,13 @@ public class Game {
                     desk_info = info;
                     // check the large card obligation and remove it if they used their largest card
                     if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
-                        System.out.println("next player has 1 card and single on desk, checking obligation!");
+                        this.log("next player has 1 card and single on desk, checking obligation!");
                         if (info.leading.ordinal() > new_deck[new_deck.length - 1].ordinal()) {
                             // they tried their best
-                            System.out.println("current player tried their best");
+                            this.log("current player tried their best");
                             largest_single_obgligation = -1;
                         } else {
-                            System.out.printf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
+                            this.logf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
                             largest_single_obgligation = current_turn;
                         }
                     } else {
@@ -490,7 +492,7 @@ public class Game {
                 offsets[i] = i == current_turn ? chips * card_total : -chips * deck_lengths[i];
             }
         }
-        System.out.println(largest_single_obgligation);
+        this.log(largest_single_obgligation);
         if (largest_single_obgligation != -1) {
             // oops someone gonna pay for their mistake
             for (int i = 0; i < 4; i++) {
@@ -576,7 +578,7 @@ public class Game {
             for (int i = 0; i < 4; i++) {
                 System.arraycopy(deck, i * 13, this.cards[i], 0, CARDS_PER_PLAYER);
                 Arrays.sort(this.cards[i]);
-//            System.out.printf("%s %s %s\n", this.cards[i]);
+//            this.logf("%s %s %s\n", this.cards[i]);
             }
             // here, if determine if we need to re-shuffle
             boolean _break = true;
@@ -654,6 +656,7 @@ public class Game {
             desk_info = null;
         }
         // we check if the player actually enough number of cards to counter the last hand
+        Game.this.log("starting turn " + current_turn);
         if (desk_info != null && cards[current_turn].length < desk_info.card_count()) {
             pass(new AnswerCallbackQuery("0"), null);
         } else {
@@ -663,7 +666,7 @@ public class Game {
                 public void onResponse(SendMessage request, SendResponse response) {
                     current_msgid = response.message().messageId();
                     // schedule when we are sure that the msg is sent successfully
-                    System.out.println("scheduled auto pass job");
+                    Game.this.log("scheduled auto pass job for turn " + current_turn);
                     schedule(Game.this::autopass, turn_wait * 1000);
                 }
 
@@ -753,7 +756,7 @@ public class Game {
     }
 
     private void remind() {
-        System.out.println("firing remind task");
+        this.log("firing remind task");
         long seconds = (start_time - System.currentTimeMillis()) / 1000;
         this.execute(new SendMessage(gid, String.format(getTranslation("JOIN_PROMPT"), Math.round(seconds / 15.0) * 15)));
         int i;
@@ -762,23 +765,23 @@ public class Game {
             ++i;
         }
         if (i > 0) {
-            System.out.println("scheduled remind task");
+            this.log("scheduled remind task");
             schedule(this::remind, start_time - System.currentTimeMillis() - remind_seconds[--i] * 1000);
         } else {
-            System.out.println(String.format("scheduled kill task after %d seconds", seconds));
+            this.log(String.format("scheduled kill task after %d seconds", seconds));
             schedule(this::kill, start_time - System.currentTimeMillis());
         }
     }
 
     private void cancel_future() {
         if (future != null && !future.isDone() && !future.isCancelled()) {
-            System.out.println("cancelled task");
+            this.log("cancelled task");
             future.cancel(true);
             future = null;
             try {
                 throw new Exception();
             } catch (Exception e) {
-                System.out.println(e.getStackTrace()[1]);
+                this.log(e.getStackTrace()[1]);
             }
         }
     }
@@ -798,7 +801,7 @@ public class Game {
 
     private void autopass() {
         // time is up for current round
-        System.out.println("firing auto pass job");
+        this.log("firing auto pass job for turn " + current_turn);
         ++autopass_count;
         this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("TIMES_UP")));
         if (autopass_count < 8) {
@@ -816,6 +819,20 @@ public class Game {
             this.execute(new SendMessage(gid, getTranslation("AFK_KILL")));
             kill();
         }
+    }
+
+    private void log(Object o) {
+        String date = sdf.format(new Date());
+        System.out.printf("[Game %d][%s] %s\n", id, date, o);
+    }
+
+    private void logf(String format, Object ...objs) {
+        String date = sdf.format(new Date());
+        Object[] _objs = new Object[objs.length + 2];
+        _objs[0] = id;
+        _objs[1] = date;
+        System.arraycopy(objs, 0, _objs, 2, objs.length);
+        System.out.printf("[Game %d][%s] %s" + format + "\n", _objs);
     }
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request) {
@@ -840,7 +857,7 @@ public class Game {
                 if (callback != null) {
                     callback.onFailure(request, e);
                 }
-                System.out.printf("%s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
+                Game.this.logf("%s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
                 if (fail_count < 5) { // linear backoff, max 5 retries
                     new Thread(() -> {
                         try {
@@ -1003,21 +1020,15 @@ public class Game {
                 if ((cards[i].getFace() - cards[i - 1].getFace()) != 1) {
                     if ((cards[i].getFace() != 11) || (cards[i - 1].getFace() != 2)) {
                         if ((cards[i].getFace() != 12) || (cards[i - 1].getFace() != 3)) {
-//                            System.out.printf("%s %s really no good\n", cards[i], cards[i - 1]);
-//                            System.out.printf("%s %s\n", cards[i].getFace(), cards[i - 1].getFace());
-                            System.out.printf("%s %s %s %s %s false\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
+//                            this.logf("%s %s %s %s %s false\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
                             return false;
                         }
                     }
                 }
             }
-            if (cards[2].getFace() != 10) {
-                System.out.printf("%s %s %s %s %s true\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
-                return true;
-            } else {
-                System.out.printf("%s %s %s %s %s false\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
-                return false;
-            }
+            //                Game.this.logf("%s %s %s %s %s true\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
+            //                Game.this.logf("%s %s %s %s %s false\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
+            return cards[2].getFace() != 10;
         }
     }
 
