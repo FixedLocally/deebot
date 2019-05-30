@@ -44,6 +44,8 @@ public class DeeBot {
         commands.put("killgame", new KillGameCommand());
         commands.put("extend", new ExtendCommand());
         commands.put("config", new ConfigCommand());
+        commands.put("maintmode", new MaintModeCommand());
+        commands.put("runinfo", new RunInfoCommand());
     }
 
     private void processUpdate(Update update) {
