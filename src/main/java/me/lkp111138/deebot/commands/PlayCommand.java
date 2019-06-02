@@ -6,7 +6,7 @@ import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
-import me.lkp111138.deebot.Translation;
+import me.lkp111138.deebot.translation.Translation;
 import me.lkp111138.deebot.game.ConcurrentGameException;
 import me.lkp111138.deebot.game.Game;
 import me.lkp111138.deebot.game.GroupInfo;
@@ -27,7 +27,7 @@ public class PlayCommand implements BaseCommand {
             Game g = Game.byGroup(msg.chat().id());
             if (g == null) {
                 try (Connection conn = Main.getConnection()) {
-                    PreparedStatement stmt = conn.prepareStatement("SELECT chips_per_card, wait_time, turn_wait_time, lang, fry, collect_place FROM groups WHERE gid=?");
+                    PreparedStatement stmt = conn.prepareStatement("SELECT chips_per_card, wait_time, turn_wait_time, lang, fry, collect_place FROM `groups` WHERE gid=?");
                     stmt.setLong(1, msg.chat().id());
                     ResultSet rs = stmt.executeQuery();
                     GroupInfo info;
@@ -44,7 +44,7 @@ public class PlayCommand implements BaseCommand {
                         collect_place = rs.getBoolean(6);
                     } else {
                         // insert
-                        PreparedStatement stmt1 = conn.prepareStatement("INSERT INTO groups (gid) VALUES (?)");
+                        PreparedStatement stmt1 = conn.prepareStatement("INSERT INTO `groups` (gid) VALUES (?)");
                         stmt1.setLong(1, msg.chat().id());
                         stmt1.execute();
                         stmt1.close();
@@ -54,21 +54,21 @@ public class PlayCommand implements BaseCommand {
                         new Game(msg, chips, wait, info);
                     } catch (ConcurrentGameException e) {
                         if (e.getGame().started()) {
-                            bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id()), "GAME_STARTED")).replyToMessageId(msg.messageId()));
+                            bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTED()).replyToMessageId(msg.messageId()));
                         } else {
-                            bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id()), "GAME_STARTING")).replyToMessageId(msg.messageId()));
+                            bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTING()).replyToMessageId(msg.messageId()));
                         }
                     }
                     stmt.close();
                 } catch (SQLException e) {
                     e.printStackTrace();
-                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id()), "ERROR") + e.getMessage()).replyToMessageId(msg.messageId()));
+                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).ERROR() + e.getMessage()).replyToMessageId(msg.messageId()));
                 }
             } else {
                 if (g.started()) {
-                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id()), "GAME_STARTED")).replyToMessageId(msg.messageId()));
+                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTED()).replyToMessageId(msg.messageId()));
                 } else {
-                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id()), "GAME_STARTING")).replyToMessageId(msg.messageId()));
+                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTING()).replyToMessageId(msg.messageId()));
                 }
             }
         }

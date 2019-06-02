@@ -16,7 +16,6 @@ import com.pengrad.telegrambot.response.BaseResponse;
 import com.pengrad.telegrambot.response.SendResponse;
 import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
-import me.lkp111138.deebot.Translation;
 import me.lkp111138.deebot.game.card.Cards;
 import me.lkp111138.deebot.game.card.Cards.Card;
 import me.lkp111138.deebot.misc.EmptyCallback;
@@ -24,8 +23,8 @@ import me.lkp111138.deebot.misc.EmptyCallback;
 import java.io.IOException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.Date;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -55,6 +54,7 @@ public class Game {
     private int current_msgid;
     private int largest_single_obgligation = -1;
     private String lang;
+    private me.lkp111138.deebot.translation.Translation translation;
     private JsonObject game_sequence = new JsonObject();
     private int id;
 
@@ -104,9 +104,10 @@ public class Game {
         this.groupInfo = groupInfo;
         this.group = msg.chat();
         this.lang = DeeBot.lang(gid);
+        this.translation = me.lkp111138.deebot.translation.Translation.get(this.lang);
         if (maint_mode) {
             // disallow starting games
-            this.execute(new SendMessage(gid, String.format(getTranslation("MAINT_MODE_NOTICE"), msg.from().id(), msg.from().firstName())).parseMode(ParseMode.HTML), new EmptyCallback<>());
+            this.execute(new SendMessage(gid, this.translation.MAINT_MODE_NOTICE()).parseMode(ParseMode.HTML), new EmptyCallback<>());
             return;
         }
         try (Connection conn = Main.getConnection()) {
@@ -125,10 +126,10 @@ public class Game {
             stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
-            this.execute(new SendMessage(msg.chat().id(), getTranslation("ERROR") + e.getMessage()).replyToMessageId(msg.messageId()));
+            this.execute(new SendMessage(msg.chat().id(), this.translation.ERROR() + e.getMessage()).replyToMessageId(msg.messageId()));
         }
         String[] check_cross = new String[]{"\uD83D\uDEAB", "\u2705"};
-        this.execute(new SendMessage(gid, String.format(getTranslation("GAME_START_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), wait, check_cross[groupInfo.collect_place ? 1 : 0], check_cross[groupInfo.fry ? 1 : 0], check_cross[1], id)).parseMode(ParseMode.HTML), new EmptyCallback<>());
+        this.execute(new SendMessage(gid, String.format(this.translation.GAME_START_ANNOUNCEMENT(), msg.from().id(), msg.from().firstName(), wait, check_cross[groupInfo.collect_place ? 1 : 0], check_cross[groupInfo.fry ? 1 : 0], check_cross[1], id)).parseMode(ParseMode.HTML), new EmptyCallback<>());
         games.put(gid, this);
         addPlayer(msg);
         start_time = System.currentTimeMillis() + wait * 1000;
@@ -147,9 +148,9 @@ public class Game {
         if (!started && !players.contains(msg.from()) && !uid_games.containsKey(msg.from().id()) && playerCount() < 4) {
             // notify player
             // .replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{}
-            SendMessage send = new SendMessage(msg.from().id(), String.format(getTranslation("JOIN_SUCCESS"), msg.chat().title().replace("*", "\\*"))).parseMode(ParseMode.Markdown);
+            SendMessage send = new SendMessage(msg.from().id(), String.format(this.translation.JOIN_SUCCESS(), msg.chat().title().replace("*", "\\*"))).parseMode(ParseMode.Markdown);
             if (msg.chat().username() != null) {
-                send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("BACK_TO") + msg.chat().title()).url("https://t.me/" + msg.chat().username())}));
+                send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.BACK_TO() + msg.chat().title()).url("https://t.me/" + msg.chat().username())}));
             }
             this.execute(send, new Callback<SendMessage, SendResponse>() {
                 @Override
@@ -164,7 +165,7 @@ public class Game {
                         players.add(msg.from());
                         uid_games.put(msg.from().id(), Game.this);
                         int count = playerCount();
-                        Game.this.execute(new SendMessage(msg.chat().id(), String.format(getTranslation("JOINED_ANNOUNCEMENT"), msg.from().id(), msg.from().firstName(), count)).parseMode(ParseMode.HTML), new EmptyCallback<>());
+                        Game.this.execute(new SendMessage(msg.chat().id(), String.format(Game.this.translation.JOINED_ANNOUNCEMENT(), msg.from().id(), msg.from().firstName(), count)).parseMode(ParseMode.HTML), new EmptyCallback<>());
                         Game.this.logf("%d / 4 players joined", count);
                         if (count == 4) {
                             // k we now got 4 players
@@ -172,7 +173,9 @@ public class Game {
                         }
                     } else {
                         // for some reason we cant deliver the msg to the user, so we ask them to start me in the group
-                        Game.this.execute(new SendMessage(msg.chat().id(), getTranslation("START_ME_FIRST")).replyToMessageId(msg.messageId()).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("START_ME")).url("https://t.me/" + System.getProperty("bot.username"))})));
+                        Game.this.execute(new SendMessage(msg.chat().id(), Game.this.translation.START_ME_FIRST())
+                                .replyToMessageId(msg.messageId())
+                                .replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(Game.this.translation.START_ME()).url("https://t.me/" + System.getProperty("bot.username"))})));
                     }
                 }
 
@@ -209,7 +212,7 @@ public class Game {
         start_time += 30000;
         start_time = Math.min(start_time, System.currentTimeMillis() + 180000);
         long seconds = (start_time - System.currentTimeMillis() + 999) / 1000;
-        this.execute(new SendMessage(gid, String.format(getTranslation("EXTENDED_ANNOUNCEMENT"), seconds)));
+        this.execute(new SendMessage(gid, String.format(this.translation.EXTENDED_ANNOUNCEMENT(), seconds)));
         int i;
         i = 0;
         while (i < 6 && remind_seconds[i] < seconds) {
@@ -288,14 +291,14 @@ public class Game {
                     if (i < 4) {
                         List<Card> _cards = Arrays.asList(cards[i]);
                         _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_FACE()).callbackData("sort:face")})));
                         _cards.sort(Comparator.comparingInt(Enum::ordinal));
                     }
                     sort_by_suit[i] = true;
                 } else {
                     i = getPlayerIndexFromQuery(callbackQuery);
                     if (i < 4) {
-                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
+                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})));
                     }
                     sort_by_suit[i] = false;
                 }
@@ -321,10 +324,10 @@ public class Game {
         if (sort_by_suit[i]) {
             List<Card> _cards = Arrays.asList(cards[i]);
             _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-            this.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_FACE")).callbackData("sort:face")})));
+            this.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_FACE()).callbackData("sort:face")})));
             _cards.sort(Comparator.comparingInt(Enum::ordinal));
         } else {
-            this.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})));
+            this.execute(new EditMessageText(players.get(i).id(), deck_msgid[i], this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})));
         }
     }
 
@@ -332,7 +335,7 @@ public class Game {
         if (!first_round) {
             if (!all_passed) {
                 if (callbackQuery != null) {
-                    this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), getTranslation("PASS")));
+                    this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), this.translation.PASS()));
                     // notify group too
                 }
                 // we can cancel the job here cuz we no longer need auto pass for this round
@@ -355,17 +358,17 @@ public class Game {
                 }
                 User current_player = players.get(current_turn);
                 if (current_player.username() != null) {
-                    this.execute(new SendMessage(group.id(), String.format(getTranslation("PASS_ANNOUNCEMENT_LINK"), current_player.username(), current_player.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                    this.execute(new SendMessage(group.id(), String.format(this.translation.PASS_ANNOUNCEMENT_LINK(), current_player.username(), current_player.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
                 } else {
-                    this.execute(new SendMessage(group.id(), String.format(getTranslation("PASS_ANNOUNCEMENT"), current_player.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                    this.execute(new SendMessage(group.id(), String.format(this.translation.PASS_ANNOUNCEMENT(), current_player.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
                 }
                 current_turn = (current_turn + 1) & 3;
                 start_turn();
             } else {
-                answer.showAlert(true).text(getTranslation("PASS_ON_EMPTY"));
+                answer.showAlert(true).text(this.translation.PASS_ON_EMPTY());
             }
         } else {
-            answer.showAlert(true).text(getTranslation("PASS_ON_FIRST"));
+            answer.showAlert(true).text(this.translation.PASS_ON_FIRST());
         }
     }
 
@@ -379,7 +382,7 @@ public class Game {
             if (first_round) {
                 // the player must play diamond 3
                 if (hand[0] != Card.D3) {
-                    answer.showAlert(true).text(getTranslation("NO_D3_ON_FIRST"));
+                    answer.showAlert(true).text(this.translation.NO_D3_ON_FIRST());
                     return;
                 }
             }
@@ -412,9 +415,9 @@ public class Game {
             }
             User current_player = players.get(current_turn);
             if (current_player.username() != null) {
-                this.execute(new SendMessage(group.id(), String.format(getTranslation("PLAYED_ANNOUNCEMENT_LINK"), current_player.username(), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), current_player.username(), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
             } else {
-                this.execute(new SendMessage(group.id(), String.format(getTranslation("PLAYED_ANNOUNCEMENT"), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT(), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
             }
             if (current_deck.length == hand.length) {
                 // player won
@@ -473,9 +476,9 @@ public class Game {
         } else {
             // alert them for invalid hand or hand to small
             if (info.type == HandType.NONE) {
-                answer.showAlert(true).text(getTranslation("INVALID_HAND"));
+                answer.showAlert(true).text(this.translation.INVALID_HAND());
             } else {
-                answer.showAlert(true).text(getTranslation("SMALL_HAND"));
+                answer.showAlert(true).text(this.translation.SMALL_HAND());
             }
         }
     }
@@ -484,7 +487,7 @@ public class Game {
         // current player won
         // notify the group
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format(getTranslation("WON_ANNOUNCEMENT"), players.get(current_turn).id(), players.get(current_turn).firstName()));
+        sb.append(String.format(this.translation.WON_ANNOUNCEMENT(), players.get(current_turn).id(), players.get(current_turn).firstName()));
         int[] deck_lengths = new int[]{cards[0].length, cards[1].length, cards[2].length, cards[3].length};
         if (groupInfo.fry) {
             for (int i = 0; i < deck_lengths.length; i++) {
@@ -526,7 +529,7 @@ public class Game {
         for (int i = 0; i < 4; i++) {
             sb.append(String.format("<a href=\"tg://user?id=%d\">%s</a> - %d [%s%d]\n", players.get(i).id(), players.get(i).firstName(), cards[i].length, offsets[i] >= 0 ? "+" : "", offsets[i]));
         }
-        sb.append(getTranslation("NEW_GAME_PROMPT"));
+        sb.append(this.translation.NEW_GAME_PROMPT());
         String msg = sb.toString();
         this.execute(new SendMessage(group.id(), msg).parseMode(ParseMode.HTML));
         started = false;
@@ -570,14 +573,14 @@ public class Game {
     public void kill() {
         if (started) {
             // the game is forcibly killed, kill aht buttons of the current player too
-            this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("GAME_ENDED")));
+            this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, this.translation.GAME_ENDED()));
             for (int i = 0; i < 4; ++i) {
                 this.execute(new EditMessageReplyMarkup(players.get(i).id(), deck_msgid[i]));
             }
         }
         cancel_future();
         // remove this game instance
-        this.execute(new SendMessage(gid, getTranslation("GAME_ENDED_ANNOUNCEMENT")), new EmptyCallback<>());
+        this.execute(new SendMessage(gid, this.translation.GAME_ENDED_ANNOUNCEMENT()), new EmptyCallback<>());
         for (int i = 0; i < playerCount(); i++) {
             uid_games.remove(players.get(i).id());
         }
@@ -651,8 +654,8 @@ public class Game {
 //                sb.append(cards[i][j].name());
 //            }
             int finalI = i;
-            this.execute(new SendMessage(players.get(i).id(), getTranslation("STARTING_DECK") + replace_all_suits(String.join(" ", cards[i]))), new EmptyCallback<>());
-            this.execute(new SendMessage(players.get(i).id(), getTranslation("YOUR_DECK") + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("SORT_SUIT")).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(i).id(), this.translation.STARTING_DECK() + replace_all_suits(String.join(" ", cards[i]))), new EmptyCallback<>());
+            this.execute(new SendMessage(players.get(i).id(), this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     deck_msgid[finalI] = response.message().messageId();
@@ -683,7 +686,7 @@ public class Game {
             pass(new AnswerCallbackQuery("0"), null);
         } else {
             // prompt the player for cards
-            this.execute(new SendMessage(players.get(current_turn).id(), getTranslation("YOUR_TURN_PROMPT") + (all_passed || first_round ? getTranslation("THERE_IS_NOTHING") : (": " + replace_all_suits(String.join("  ", desk_cards))))).replyMarkup(buttons_from_deck()), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(current_turn).id(), this.translation.YOUR_TURN_PROMPT() + (all_passed || first_round ? this.translation.THERE_IS_NOTHING() : (": " + replace_all_suits(String.join("  ", desk_cards))))).replyMarkup(buttons_from_deck()), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     current_msgid = response.message().messageId();
@@ -708,19 +711,19 @@ public class Game {
                 }
             }
             if (desk_cards == null || desk_cards.length == 0) {
-                sb.append(getTranslation("NOTHING_ON_DESK"));
+                sb.append(this.translation.NOTHING_ON_DESK());
             } else {
                 if (desk_user.username() != null) {
-                    sb.append(String.format(getTranslation("ON_DESK_LINK"), replace_all_suits(String.join("  ", desk_cards)), desk_user.username(), desk_user.firstName()));
+                    sb.append(String.format(this.translation.ON_DESK_LINK(), replace_all_suits(String.join("  ", desk_cards)), desk_user.username(), desk_user.firstName()));
                 } else {
-                    sb.append(String.format(getTranslation("ON_DESK"), replace_all_suits(String.join("  ", desk_cards)), desk_user.firstName()));
+                    sb.append(String.format(this.translation.ON_DESK(), replace_all_suits(String.join("  ", desk_cards)), desk_user.firstName()));
                 }
             }
-            sb.append(String.format(getTranslation("YOUR_TURN_ANNOUNCEMENT"), players.get(current_turn).id(), players.get(current_turn).firstName(), turn_wait));
+            sb.append(String.format(this.translation.YOUR_TURN_ANNOUNCEMENT(), players.get(current_turn).id(), players.get(current_turn).firstName(), turn_wait));
             String msg = sb.toString();
             SendMessage send = new SendMessage(gid, msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
             group.username();
-            send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("PICK_CARDS")).url("https://t.me/" + System.getProperty("bot.username"))}));
+            send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.PICK_CARDS()).url("https://t.me/" + System.getProperty("bot.username"))}));
             this.execute(send);
         }
     }
@@ -763,13 +766,13 @@ public class Game {
         Arrays.sort(proposal_cards);
         String btn_play = replace_all_suits(String.join("  ", proposal_cards));
         if (proposal_cards.length == 0) {
-            btn_play = getTranslation("CHOOSE_SOME_CARDS");
+            btn_play = this.translation.CHOOSE_SOME_CARDS();
         } else {
             HandInfo info = new HandInfo(proposal_cards);
             btn_play = info.type + btn_play;
         }
         buttons[rows - 2] =  new InlineKeyboardButton[]{new InlineKeyboardButton(btn_play).callbackData("play:" + current_proposal)};
-        buttons[rows - 1] = new InlineKeyboardButton[]{new InlineKeyboardButton(getTranslation("PASS")).callbackData("pass")};
+        buttons[rows - 1] = new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.PASS()).callbackData("pass")};
         return new InlineKeyboardMarkup(buttons);
     }
 
@@ -780,7 +783,7 @@ public class Game {
     private void remind() {
         this.log("firing remind task");
         long seconds = (start_time - System.currentTimeMillis()) / 1000;
-        this.execute(new SendMessage(gid, String.format(getTranslation("JOIN_PROMPT"), Math.round(seconds / 15.0) * 15)));
+        this.execute(new SendMessage(gid, String.format(this.translation.JOIN_PROMPT(), Math.round(seconds / 15.0) * 15)));
         int i;
         i = 0;
         while (remind_seconds[i] < seconds) {
@@ -813,10 +816,6 @@ public class Game {
         future = executor.schedule(runnable, l, TimeUnit.MILLISECONDS);
     }
 
-    private String getTranslation(String key) {
-        return Translation.get(lang, key);
-    }
-
     public String getLang() {
         return lang;
     }
@@ -825,7 +824,7 @@ public class Game {
         // time is up for current round
         this.log("firing auto pass job for turn " + current_turn);
         ++autopass_count;
-        this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, getTranslation("TIMES_UP")));
+        this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, this.translation.TIMES_UP()));
         if (autopass_count < 8) {
             if (first_round) {
                 play(new Cards.Card[]{Cards.Card.D3}, new AnswerCallbackQuery("0"), null, new String[]{"play", "D3"});
@@ -838,7 +837,7 @@ public class Game {
                 }
             }
         } else {
-            this.execute(new SendMessage(gid, getTranslation("AFK_KILL")));
+            this.execute(new SendMessage(gid, this.translation.AFK_KILL()));
             kill();
         }
     }

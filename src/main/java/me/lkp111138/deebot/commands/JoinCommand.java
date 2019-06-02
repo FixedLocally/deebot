@@ -5,7 +5,7 @@ import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
-import me.lkp111138.deebot.Translation;
+import me.lkp111138.deebot.translation.Translation;
 import me.lkp111138.deebot.game.Game;
 
 import java.sql.Connection;
@@ -19,8 +19,9 @@ public class JoinCommand implements BaseCommand {
         long gid = msg.chat().id();
         Game g = Game.byGroup(gid);
         if (g == null) {
-            bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(gid), "NO_GAME_TO_JOIN")).replyToMessageId(msg.messageId()));
+            bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(gid)).NO_GAME_TO_JOIN()).replyToMessageId(msg.messageId()));
             try (Connection conn = Main.getConnection()) {
+                // create user profile if there wasn't one
                 PreparedStatement stmt = conn.prepareStatement("INSERT IGNORE INTO tg_users (tgid, username) VALUES (?, ?)");
                 stmt.setInt(1, msg.from().id());
                 stmt.setString(2, msg.from().username());
