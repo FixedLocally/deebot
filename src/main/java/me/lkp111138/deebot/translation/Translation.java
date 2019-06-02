@@ -31,7 +31,7 @@ public class Translation {
         return "Pass";
     }
     public String PASS_ON_EMPTY() {
-        return "The desk is empty, you are free to play any hand";
+        return "The desk is empty, you are free to play any valid combination";
     }
     public String PASS_ON_FIRST() {
         return "It's the first turn, your hand must include \u2666\ufe0f 3";
@@ -115,7 +115,7 @@ public class Translation {
         return "The game has already started! Wait for it to finish before starting a new one.";
     }
     public String GAME_START_ANNOUNCEMENT() {
-        return "[ <a href=\"tg://user?id=%d\">%s</a> ] has started a new game! You have %d seconds to /join\n\n計 Place：%s\n炒：%s\n包牌：%s\nGame ID: %d";
+        return "[ <a href=\"tg://user?id=%d\">%s</a> ] has started a new game! You have %d seconds to /join\n\nPlace-based Scoring%s\nCard multiplication: %s\nAssistance penalty: %s\nGame ID: %d";
     }
     public String NOTHING_ON_DESK() {
         return "\nThere is nothing on the desk.\n";
@@ -141,6 +141,7 @@ public class Translation {
             translations = new HashMap<>();
             translations.put("en", DEFAULT);
             translations.put("zh", new TraditionalChinese());
+            translations.put("zh_hk", new HongKongChinese());
         }
         return translations.getOrDefault(lang, DEFAULT);
     }
