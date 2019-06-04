@@ -173,4 +173,8 @@ public class TraditionalChinese extends Translation {
     public String MAINT_MODE_NOTICE() {
         return "正在維修，請稍後再試。";
     }
+    @Override
+    public String CLOSE() {
+        return "關閉";
+    }
 }

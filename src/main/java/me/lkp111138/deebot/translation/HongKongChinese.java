@@ -173,4 +173,8 @@ public class HongKongChinese extends Translation {
     public String MAINT_MODE_NOTICE() {
         return "維修緊，請遲啲再試。";
     }
+    @Override
+    public String CLOSE() {
+        return "關閉";
+    }
 }

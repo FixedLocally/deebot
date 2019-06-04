@@ -80,11 +80,8 @@ public class ConfigCommand implements BaseCommand {
 
     public static boolean callback(TelegramBot bot, CallbackQuery query) {
         boolean processed = false;
-        int tgid = query.from().id();
         String payload = query.data();
-        System.out.println(payload);
         String[] args = payload.split(":");
-        AnswerCallbackQuery answer = new AnswerCallbackQuery(query.id());
         switch (args[0]) {
             case "flags":
                 if (args.length > 2) {
@@ -117,9 +114,9 @@ public class ConfigCommand implements BaseCommand {
                         e.printStackTrace();
                     }
                 }
+                processed = true;
                 break;
         }
-        bot.execute(answer);
         return processed;
     }
 

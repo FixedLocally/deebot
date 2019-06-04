@@ -115,7 +115,7 @@ public class Translation {
         return "The game has already started! Wait for it to finish before starting a new one.";
     }
     public String GAME_START_ANNOUNCEMENT() {
-        return "[ <a href=\"tg://user?id=%d\">%s</a> ] has started a new game! You have %d seconds to /join\n\nPlace-based Scoring%s\nCard multiplication: %s\nAssistance penalty: %s\nGame ID: %d";
+        return "[ <a href=\"tg://user?id=%d\">%s</a> ] has started a new game! You have %d seconds to /join\n\nPlace-based Scoring: %s\nCard multiplication: %s\nAssistance penalty: %s\nGame ID: %d";
     }
     public String NOTHING_ON_DESK() {
         return "\nThere is nothing on the desk.\n";
@@ -132,6 +132,9 @@ public class Translation {
     public String MAINT_MODE_NOTICE() {
         return "Bot is under maintenance, please try again later.";
     }
+    public String CLOSE() {
+        return "Close";
+    }
 
     private static HashMap<String, Translation> translations;
     private static final Translation DEFAULT = new Translation();
@@ -141,7 +144,7 @@ public class Translation {
             translations = new HashMap<>();
             translations.put("en", DEFAULT);
             translations.put("zh", new TraditionalChinese());
-            translations.put("zh_hk", new HongKongChinese());
+            translations.put("hk", new HongKongChinese());
         }
         return translations.getOrDefault(lang, DEFAULT);
     }

@@ -46,6 +46,7 @@ public class DeeBot {
         commands.put("config", new ConfigCommand());
         commands.put("maintmode", new MaintModeCommand());
         commands.put("runinfo", new RunInfoCommand());
+        commands.put("setlang", new SetLangCommand());
     }
 
     private void processUpdate(Update update) {
@@ -105,13 +106,16 @@ public class DeeBot {
             if (ConfigCommand.callback(bot, query)) {
                 return;
             }
+            if (SetLangCommand.callback(bot, query)) {
+                return;
+            }
         }
     }
 
     public static String lang(long gid) {
         return group_lang.computeIfAbsent(gid, aLong -> {
             try (Connection conn = Main.getConnection()) {
-                PreparedStatement stmt = conn.prepareStatement("select lang from `groups` where gid=?");
+                PreparedStatement stmt = conn.prepareStatement("SELECT lang FROM `groups` WHERE gid=?");
                 stmt.setLong(1, gid);
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) {
@@ -124,5 +128,16 @@ public class DeeBot {
                 return "en";
             }
         });
+    }
+
+    public static void setLang(long gid, String lang) {
+        try (Connection conn = Main.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("update `groups` set lang=? where gid=?");
+            stmt.setString(1, lang);
+            stmt.setLong(2, gid);
+            group_lang.put(gid, lang);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

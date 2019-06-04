@@ -305,7 +305,6 @@ public class Game {
                 processed = true;
                 break;
         }
-        this.execute(answer);
         return processed;
     }
 
