@@ -48,6 +48,7 @@ public class DeeBot {
         commands.put("runinfo", new RunInfoCommand());
         commands.put("setlang", new SetLangCommand());
         commands.put("help", new HelpCommand());
+        commands.put("feedback", new FeedbackCommand());
     }
 
     private void processUpdate(Update update) {
