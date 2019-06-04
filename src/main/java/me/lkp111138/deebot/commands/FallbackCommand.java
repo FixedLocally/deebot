@@ -9,7 +9,7 @@ import com.pengrad.telegrambot.response.SendResponse;
 
 import java.io.IOException;
 
-public class FallbackCommand implements BaseCommand {
+public class FallbackCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         if (msg.chat().type() == Chat.Type.Private) {

@@ -17,8 +17,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DeeBot {
-    private final BaseCommand fallback = new FallbackCommand();
-    private final Map<String, BaseCommand> commands = new HashMap<>();
+    private final Command fallback = new FallbackCommand();
+    private final Map<String, Command> commands = new HashMap<>();
     private final TelegramBot bot;
 
     private static Map<Long, String> group_lang = new HashMap<>();
@@ -47,6 +47,7 @@ public class DeeBot {
         commands.put("maintmode", new MaintModeCommand());
         commands.put("runinfo", new RunInfoCommand());
         commands.put("setlang", new SetLangCommand());
+        commands.put("help", new HelpCommand());
     }
 
     private void processUpdate(Update update) {
@@ -109,6 +110,7 @@ public class DeeBot {
             if (SetLangCommand.callback(bot, query)) {
                 return;
             }
+            System.out.println(query.data());
         }
     }
 

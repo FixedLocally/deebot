@@ -6,7 +6,7 @@ import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.Main;
 import me.lkp111138.deebot.game.Game;
 
-public class MaintModeCommand implements BaseCommand {
+public class MaintModeCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         if (msg.from().id() == Main.BOT_OWNER) {

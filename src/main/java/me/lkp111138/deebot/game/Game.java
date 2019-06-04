@@ -57,6 +57,7 @@ public class Game {
     private me.lkp111138.deebot.translation.Translation translation;
     private JsonObject game_sequence = new JsonObject();
     private int id;
+    private boolean ended = false;
 
     private static Map<Long, Game> games = new HashMap<>();
     private static Map<Integer, Game> uid_games = new HashMap<>();
@@ -138,14 +139,20 @@ public class Game {
         while (wait > remind_seconds[i]) {
             ++i;
         }
-        this.log("scheduled remind task");
+//        this.log("scheduled remind task");
         schedule(this::remind, (wait - remind_seconds[--i]) * 1000);
         this.logf("Game created in %s [%d]", msg.chat().title(), msg.chat().id());
     }
 
     public void addPlayer(Message msg) {
+        // if a player is in a dead game, remove them
+        User from = msg.from();
+        Game g = uid_games.get(from.id());
+        if (g != null && g.ended) {
+            uid_games.remove(from.id());
+        }
         // add to player list
-        if (!started && !players.contains(msg.from()) && !uid_games.containsKey(msg.from().id()) && playerCount() < 4) {
+        if (!started && !players.contains(from) && !uid_games.containsKey(from.id()) && playerCount() < 4) {
             // notify player
             // .replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{}
             SendMessage send = new SendMessage(msg.from().id(), String.format(this.translation.JOIN_SUCCESS(), msg.chat().title().replace("*", "\\*"))).parseMode(ParseMode.Markdown);
@@ -166,7 +173,7 @@ public class Game {
                         uid_games.put(msg.from().id(), Game.this);
                         int count = playerCount();
                         Game.this.execute(new SendMessage(msg.chat().id(), String.format(Game.this.translation.JOINED_ANNOUNCEMENT(), msg.from().id(), msg.from().firstName(), count)).parseMode(ParseMode.HTML), new EmptyCallback<>());
-                        Game.this.logf("%d / 4 players joined", count);
+//                        Game.this.logf("%d / 4 players joined", count);
                         if (count == 4) {
                             // k we now got 4 players
                             start();
@@ -218,7 +225,7 @@ public class Game {
         while (i < 6 && remind_seconds[i] < seconds) {
             ++i;
         }
-        this.log("scheduled remind task");
+//        this.log("scheduled remind task");
         schedule(this::remind, (seconds - remind_seconds[--i]) * 1000);
     }
 
@@ -342,14 +349,14 @@ public class Game {
                 // cancel their obligation if they dont have a eligible card
                 Card[] current_deck = cards[current_turn];
                 if (cards[(current_turn + 1) & 3].length == 1 && desk_info.type == HandType.SINGLE) {
-                    this.log("next player has 1 card and single on desk, checking obligation!");
+//                    this.log("next player has 1 card and single on desk, checking obligation!");
                     if (current_deck[current_deck.length - 1].ordinal() < desk_info.leading.ordinal()) {
                         // they cant even try
-                        this.log("they cant even try");
+//                        this.log("they cant even try");
                         largest_single_obgligation = -1;
                     } else {
                         // they didnt try
-                        this.log("they didnt try their best");
+//                        this.log("they didnt try their best");
                         largest_single_obgligation = current_turn;
                     }
                 } else {
@@ -455,13 +462,13 @@ public class Game {
                     desk_info = info;
                     // check the large card obligation and remove it if they used their largest card
                     if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
-                        this.log("next player has 1 card and single on desk, checking obligation!");
+//                        this.log("next player has 1 card and single on desk, checking obligation!");
                         if (info.leading.ordinal() > new_deck[new_deck.length - 1].ordinal()) {
                             // they tried their best
-                            this.log("current player tried their best");
+//                            this.log("current player tried their best");
                             largest_single_obgligation = -1;
                         } else {
-                            this.logf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
+//                            this.logf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
                             largest_single_obgligation = current_turn;
                         }
                     } else {
@@ -515,7 +522,7 @@ public class Game {
                 offsets[i] = i == current_turn ? chips * card_total : -chips * deck_lengths[i];
             }
         }
-        this.log(largest_single_obgligation);
+//        this.log(largest_single_obgligation);
         if (largest_single_obgligation != -1) {
             // oops someone gonna pay for their mistake
             for (int i = 0; i < 4; i++) {
@@ -570,6 +577,7 @@ public class Game {
     }
 
     public void kill() {
+        this.log("Game ended");
         if (started) {
             // the game is forcibly killed, kill aht buttons of the current player too
             this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, this.translation.GAME_ENDED()));
@@ -584,7 +592,7 @@ public class Game {
             uid_games.remove(players.get(i).id());
         }
         games.remove(gid);
-
+        ended = true;
     }
 
     private void start() {
@@ -680,7 +688,7 @@ public class Game {
             desk_info = null;
         }
         // we check if the player actually enough number of cards to counter the last hand
-        Game.this.log("starting turn " + current_turn);
+//        Game.this.log("starting turn " + current_turn);
         if (desk_info != null && cards[current_turn].length < desk_info.card_count()) {
             pass(new AnswerCallbackQuery("0"), null);
         } else {
@@ -690,7 +698,7 @@ public class Game {
                 public void onResponse(SendMessage request, SendResponse response) {
                     current_msgid = response.message().messageId();
                     // schedule when we are sure that the msg is sent successfully
-                    Game.this.log("scheduled auto pass job for turn " + current_turn);
+//                    Game.this.log("scheduled auto pass job for turn " + current_turn);
                     schedule(Game.this::autopass, turn_wait * 1000);
                 }
 
@@ -780,7 +788,7 @@ public class Game {
     }
 
     private void remind() {
-        this.log("firing remind task");
+//        this.log("firing remind task");
         long seconds = (start_time - System.currentTimeMillis()) / 1000;
         this.execute(new SendMessage(gid, String.format(this.translation.JOIN_PROMPT(), Math.round(seconds / 15.0) * 15)));
         int i;
@@ -789,24 +797,24 @@ public class Game {
             ++i;
         }
         if (i > 0) {
-            this.log("scheduled remind task");
+//            this.log("scheduled remind task");
             schedule(this::remind, start_time - System.currentTimeMillis() - remind_seconds[--i] * 1000);
         } else {
-            this.log(String.format("scheduled kill task after %d seconds", seconds));
+//            this.log(String.format("scheduled kill task after %d seconds", seconds));
             schedule(this::kill, start_time - System.currentTimeMillis());
         }
     }
 
     private void cancel_future() {
         if (future != null && !future.isDone() && !future.isCancelled()) {
-            this.log("cancelled task");
+//            this.log("cancelled task");
             future.cancel(true);
             future = null;
-            try {
-                throw new Exception();
-            } catch (Exception e) {
-                this.log(e.getStackTrace()[1]);
-            }
+//            try {
+//                throw new Exception();
+//            } catch (Exception e) {
+//                this.log(e.getStackTrace()[1]);
+//            }
         }
     }
 
@@ -821,7 +829,7 @@ public class Game {
 
     private void autopass() {
         // time is up for current round
-        this.log("firing auto pass job for turn " + current_turn);
+//        this.log("firing auto pass job for turn " + current_turn);
         ++autopass_count;
         this.execute(new EditMessageText(players.get(current_turn).id(), current_msgid, this.translation.TIMES_UP()));
         if (autopass_count < 8) {
@@ -877,7 +885,7 @@ public class Game {
                 if (callback != null) {
                     callback.onFailure(request, e);
                 }
-                Game.this.logf("%s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
+                Game.this.logf("HTTP Error: %s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
                 if (fail_count < 5) { // linear backoff, max 5 retries
                     new Thread(() -> {
                         try {

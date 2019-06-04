@@ -10,7 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class StartCommand implements BaseCommand {
+public class StartCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         // init the user if needed

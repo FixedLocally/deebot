@@ -5,14 +5,14 @@ import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
-import me.lkp111138.deebot.translation.Translation;
 import me.lkp111138.deebot.game.Game;
+import me.lkp111138.deebot.translation.Translation;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class JoinCommand implements BaseCommand {
+public class JoinCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         // joins a game

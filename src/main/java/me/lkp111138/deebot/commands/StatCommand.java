@@ -1,7 +1,6 @@
 package me.lkp111138.deebot.commands;
 
 import com.pengrad.telegrambot.TelegramBot;
-import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.User;
 import com.pengrad.telegrambot.model.request.ParseMode;
@@ -13,7 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class StatCommand implements BaseCommand {
+public class StatCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         User target = msg.from();
@@ -26,14 +25,13 @@ public class StatCommand implements BaseCommand {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 if (rs.getInt(4) > 0) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(String.format("Statistics for <a href=\"tg://user?id=%d\">%s</a>\n", target.id(), target.firstName()));
-                    sb.append(String.format("Won cards: %d\n", rs.getInt(2)));
-                    sb.append(String.format("Lost cards: %d\n", rs.getInt(5)));
-                    sb.append(String.format("Won/Total games: %d / %d (%.2f%%)\n", rs.getInt(3), rs.getInt(4), 100.0 * rs.getInt(3) / rs.getInt(4)));
-                    sb.append(String.format("Won/Lost cards: %d / %d (%.2f%%)\n", rs.getInt(2), rs.getInt(5), 100.0 * rs.getInt(2) / rs.getInt(5)));
-                    sb.append(String.format("Chips: %d", rs.getInt(1)));
-                    bot.execute(new SendMessage(msg.chat().id(), sb.toString()).replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
+                    String sb = String.format("Statistics for <a href=\"tg://user?id=%d\">%s</a>\n", target.id(), target.firstName()) +
+                            String.format("Won cards: %d\n", rs.getInt(2)) +
+                            String.format("Lost cards: %d\n", rs.getInt(5)) +
+                            String.format("Won/Total games: %d / %d (%.2f%%)\n", rs.getInt(3), rs.getInt(4), 100.0 * rs.getInt(3) / rs.getInt(4)) +
+                            String.format("Won/Lost cards: %d / %d (%.2f%%)\n", rs.getInt(2), rs.getInt(5), 100.0 * rs.getInt(2) / rs.getInt(5)) +
+                            String.format("Chips: %d", rs.getInt(1));
+                    bot.execute(new SendMessage(msg.chat().id(), sb).replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
                 } else {
                     bot.execute(new SendMessage(msg.chat().id(), "You haven't played a game yet!").replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
                 }

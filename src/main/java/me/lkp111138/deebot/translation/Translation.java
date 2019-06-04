@@ -136,6 +136,31 @@ public class Translation {
         return "Close";
     }
 
+    public String HELP() {
+        return "**Commands**\n" +
+                "\n" +
+                "/stat - View your stats.\n" +
+                "/help - Shows help.\n" +
+                "\n" +
+                "**Group only commands**\n" +
+                "\n" +
+                "/play - Starts a new game.\n" +
+                "/startgame - Alias of /play\n" +
+                "/join - Joins a game.\n" +
+                "/flee - Leaves a game while it is still recruiting.\n" +
+                "/extend - Extend the recruiting period.\n" +
+                "\n" +
+                "**Group admin only commands**\n" +
+                "\n" +
+                "/config - Changes game configuration, opens in PM.\n" +
+                "/setlang - Changes game language.\n" +
+                "\n" +
+                "**Technical**\n" +
+                "\n" +
+                "/runinfo - Displays some info.\n" +
+                "/ping - Unknown command.";
+    }
+
     private static HashMap<String, Translation> translations;
     private static final Translation DEFAULT = new Translation();
 

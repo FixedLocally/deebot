@@ -18,7 +18,7 @@ import me.lkp111138.deebot.translation.Translation;
 
 import java.io.IOException;
 
-public class SetLangCommand implements BaseCommand {
+public class SetLangCommand implements Command {
     public void respond(TelegramBot bot, Message msg, String[] args) {
         if (msg.from().id() == Main.BOT_OWNER) {
             send(bot, msg);

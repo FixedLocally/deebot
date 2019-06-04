@@ -5,7 +5,7 @@ import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.game.Game;
 
-public class RunInfoCommand implements BaseCommand {
+public class RunInfoCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         Game.RunInfo runInfo = Game.runInfo();

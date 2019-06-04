@@ -8,7 +8,10 @@ import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.model.request.ParseMode;
-import com.pengrad.telegrambot.request.*;
+import com.pengrad.telegrambot.request.EditMessageReplyMarkup;
+import com.pengrad.telegrambot.request.EditMessageText;
+import com.pengrad.telegrambot.request.GetChatMember;
+import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.GetChatMemberResponse;
 import me.lkp111138.deebot.Main;
 
@@ -17,7 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class ConfigCommand implements BaseCommand {
+public class ConfigCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         if (msg.from().id() == Main.BOT_OWNER) {
