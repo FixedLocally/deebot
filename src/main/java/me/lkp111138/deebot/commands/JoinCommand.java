@@ -18,18 +18,18 @@ public class JoinCommand implements Command {
         // joins a game
         long gid = msg.chat().id();
         Game g = Game.byGroup(gid);
+        try (Connection conn = Main.getConnection()) {
+            // create user profile if there wasn't one
+            PreparedStatement stmt = conn.prepareStatement("INSERT IGNORE INTO tg_users (tgid, username) VALUES (?, ?)");
+            stmt.setInt(1, msg.from().id());
+            stmt.setString(2, msg.from().username());
+            stmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            bot.execute(new SendMessage(msg.chat().id(), "An error occurred: " + e.getMessage()).replyToMessageId(msg.messageId()));
+        }
         if (g == null) {
             bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(gid)).NO_GAME_TO_JOIN()).replyToMessageId(msg.messageId()));
-            try (Connection conn = Main.getConnection()) {
-                // create user profile if there wasn't one
-                PreparedStatement stmt = conn.prepareStatement("INSERT IGNORE INTO tg_users (tgid, username) VALUES (?, ?)");
-                stmt.setInt(1, msg.from().id());
-                stmt.setString(2, msg.from().username());
-                stmt.execute();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                bot.execute(new SendMessage(msg.chat().id(), "An error occurred: " + e.getMessage()).replyToMessageId(msg.messageId()));
-            }
         } else {
             g.addPlayer(msg);
         }
