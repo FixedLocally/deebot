@@ -155,7 +155,7 @@ public class Game {
         if (!started && !players.contains(from) && !uid_games.containsKey(from.id()) && playerCount() < 4) {
             // notify player
             // .replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{}
-            SendMessage send = new SendMessage(msg.from().id(), String.format(this.translation.JOIN_SUCCESS(), msg.chat().title().replace("*", "\\*"))).parseMode(ParseMode.Markdown);
+            SendMessage send = new SendMessage(msg.from().id(), String.format(this.translation.JOIN_SUCCESS(), msg.chat().title().replace("*", "\\*"), this.id)).parseMode(ParseMode.Markdown);
             if (msg.chat().username() != null) {
                 send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.BACK_TO() + msg.chat().title()).url("https://t.me/" + msg.chat().username())}));
             }

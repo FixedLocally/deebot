@@ -10,7 +10,7 @@ public class Translation {
         return "An error occurred: ";
     }
     public String JOIN_SUCCESS() {
-        return "You have successfully joined the game in *%s*! ";
+        return "You have successfully joined the game in *%s*! Game IDL %d";
     }
     public String BACK_TO() {
         return "Back to ";

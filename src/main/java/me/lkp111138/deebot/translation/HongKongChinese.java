@@ -11,7 +11,7 @@ public class HongKongChinese extends Translation {
     }
     @Override
     public String JOIN_SUCCESS() {
-        return "你成功加入咗 *%s* 嘅遊戲！ ";
+        return "你成功加入咗 *%s* 嘅遊戲！遊戲編號：%d";
     }
     @Override
     public String BACK_TO() {
