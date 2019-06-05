@@ -147,7 +147,7 @@ public class HongKongChinese extends Translation {
     }
     @Override
     public String GAME_STARTED() {
-        return "遊戲開咗始！請等呢場完咗再開過";
+        return "遊戲開始咗！請等呢場完咗再開過";
     }
     @Override
     public String GAME_START_ANNOUNCEMENT() {
