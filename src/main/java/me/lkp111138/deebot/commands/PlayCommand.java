@@ -68,7 +68,9 @@ public class PlayCommand implements Command {
                 if (g.started()) {
                     bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTED()).replyToMessageId(msg.messageId()));
                 } else {
-                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTING()).replyToMessageId(msg.messageId()));
+//                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTING()).replyToMessageId(msg.messageId()));
+                    // as if it's a join
+                    new JoinCommand().respond(bot, msg, args);
                 }
             }
         }
