@@ -96,6 +96,7 @@ public class DeeBot {
         }
         if (query != null) {
             Game g = Game.byUser(query.from().id());
+            System.out.println(query.data());
             if (g != null) {
                 try {
                     if (g.callback(query)) {
