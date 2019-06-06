@@ -63,7 +63,8 @@ public abstract class Achievement {
                     stmt.setString(2, achv.getTag());
                     stmt.execute();
                     Translation translation = Translation.get(null);
-                    SendMessage send = new SendMessage(uid, translation.ACHIEVEMENT_UNLOCKED() + translation.ACHIEVEMENT_PM(achv.getTag()));
+                    SendMessage send = new SendMessage(uid, translation.ACHIEVEMENT_UNLOCKED()
+                            + translation.ACHIEVEMENT_TITLE(achv.getTag()) + translation.ACHIEVEMENT_DESC(achv.getTag()));
                     send.parseMode(ParseMode.Markdown);
                     bot.execute(send);
                 } catch (SQLException e) {

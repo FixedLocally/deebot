@@ -136,10 +136,23 @@ public class Translation {
         return "Close";
     }
 
+    public String ACHIEVEMENT_UNLOCKED() {
+        return "Achievement Unlocked!\n";
+    }
+
+    public String ACHV_UNLOCKED() {
+        return "Achievements unlocked:\n";
+    }
+
+    public String A_TOTAL_OF() {
+        return "A total of %d.";
+    }
+
     public String HELP() {
         return "**Commands**\n" +
                 "\n" +
                 "/stats - View your stats.\n" +
+                "/achv - View your achievements.\n" +
                 "/help - Shows help.\n" +
                 "\n" +
                 "**Group only commands**\n" +
@@ -161,48 +174,63 @@ public class Translation {
                 "/ping - Unknown command.";
     }
 
-    public String ACHIEVEMENT_UNLOCKED() {
-        return "Achievement Unlocked!\n";
-    }
-
-    public String ACHIEVEMENT_PM(String achv_key) {
+    public String ACHIEVEMENT_TITLE(String achv_key) {
         switch (achv_key) {
             case "FIRST_GAME":
-                return "**Newbie**\n" +
-                        "Play your first game.";
+                return "**Newbie**\n";
             case "FIRST_WIN":
-                return "**I won**\n" +
-                        "Win a game.";
+                return "**I won**\n";
             case "PLAY_WITH_MINT":
-                return "**You need a mint?**\n" +
-                        "Play a game with the developer.";
+                return "**You need a mint?**\n";
             case "FIRST_BLOOD":
-                return "**First Game**\n" +
-                        "Play your first game.";
+                return "**First Game**\n";
             case "ROOKIE":
-                return "**Rookie**\n" +
-                        "Play 50 games.";
+                return "**Rookie**\n";
             case "FAMILIARIZED":
-                return "**Familiarized**\n" +
-                        "Play 200 games.";
+                return "**Familiarized**\n";
             case "ADDICTED":
-                return "**Addicted**\n" +
-                        "Play 1000 games. Loved the game don't you?";
+                return "**Addicted**\n";
             case "AMATEUR":
-                return "**Amateur**\n" +
-                        "Win 20 games.";
+                return "**Amateur**\n";
             case "ADEPT":
-                return "**Adept**\n" +
-                        "Win 100 games. That's impressive.";
+                return "**Adept**\n";
             case "EXPERT":
-                return "**Expert**\n" +
-                        "Win 500 games. That's insane!";
+                return "**Expert**\n";
             case "LOSE_IT_ALL":
-                return "**Lose it all**\n" +
-                        "Lose a game without playing a single card. Oof.";
+                return "**Lose it all**\n";
             case "DEEP_FRIED":
-                return "**Deep fried**\n" +
-                        "Win a game while your opponents do not get a chance to play a single card.";
+                return "**Deep fried**\n";
+            default:
+                return achv_key;
+        }
+    }
+
+    public String ACHIEVEMENT_DESC(String achv_key) {
+        switch (achv_key) {
+            case "FIRST_GAME":
+                return "Play your first game.";
+            case "FIRST_WIN":
+                return "Win a game.";
+            case "PLAY_WITH_MINT":
+                return "Play a game with the developer.";
+            case "FIRST_BLOOD":
+                return "Play your first game.";
+            case "ROOKIE":
+                return "Play 50 games.";
+            case "FAMILIARIZED":
+                return "Play 200 games.";
+            case "ADDICTED":
+                return "Play 1000 games. Loved the game don't you?";
+            case "AMATEUR":
+                return "Win 20 games.";
+            case "ADEPT":
+                return "Win 100 games. That's impressive.";
+            case "EXPERT":
+                return "Win 500 games. That's insane!";
+            case "LOSE_IT_ALL":
+                return "Lose a game without playing a single card. Oof.";
+            case "DEEP_FRIED":
+                return "Win a game while your opponents do not get a chance to play a single card.";
             default:
                 return achv_key;
         }

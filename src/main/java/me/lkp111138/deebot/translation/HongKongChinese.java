@@ -177,4 +177,19 @@ public class HongKongChinese extends Translation {
     public String CLOSE() {
         return "關閉";
     }
+
+    @Override
+    public String ACHIEVEMENT_UNLOCKED() {
+        return "解鎖成就！\n";
+    }
+
+    @Override
+    public String ACHV_UNLOCKED() {
+        return "解鎖咗嘅成就：\n";
+    }
+
+    @Override
+    public String A_TOTAL_OF() {
+        return "總共 %d 個";
+    }
 }
