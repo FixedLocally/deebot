@@ -16,6 +16,7 @@ import com.pengrad.telegrambot.response.BaseResponse;
 import com.pengrad.telegrambot.response.SendResponse;
 import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
+import me.lkp111138.deebot.game.achievement.Achievement;
 import me.lkp111138.deebot.game.card.Cards;
 import me.lkp111138.deebot.game.card.Cards.Card;
 import me.lkp111138.deebot.misc.EmptyCallback;
@@ -45,6 +46,7 @@ public class Game {
     private boolean all_passed = false;
     private List<User> players = new ArrayList<>();
     private Card[][] cards = new Card[4][CARDS_PER_PLAYER];
+    private Card[][] starting_cards = new Card[4][CARDS_PER_PLAYER];
     private int[] deck_msgid = new int[4];
     private boolean[] sort_by_suit = new boolean[]{false, false, false, false};
     private Card[] desk_cards = new Card[0];
@@ -57,7 +59,9 @@ public class Game {
     private me.lkp111138.deebot.translation.Translation translation;
     private JsonObject game_sequence = new JsonObject();
     private int id;
+
     private boolean ended = false;
+    private int[] offsets;
 
     private static Map<Long, Game> games = new HashMap<>();
     private static Map<Integer, Game> uid_games = new HashMap<>();
@@ -349,14 +353,9 @@ public class Game {
                 // cancel their obligation if they dont have a eligible card
                 Card[] current_deck = cards[current_turn];
                 if (cards[(current_turn + 1) & 3].length == 1 && desk_info.type == HandType.SINGLE) {
-//                    this.log("next player has 1 card and single on desk, checking obligation!");
                     if (current_deck[current_deck.length - 1].ordinal() < desk_info.leading.ordinal()) {
-                        // they cant even try
-//                        this.log("they cant even try");
                         largest_single_obgligation = -1;
                     } else {
-                        // they didnt try
-//                        this.log("they didnt try their best");
                         largest_single_obgligation = current_turn;
                     }
                 } else {
@@ -462,13 +461,9 @@ public class Game {
                     desk_info = info;
                     // check the large card obligation and remove it if they used their largest card
                     if (cards[(current_turn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
-//                        this.log("next player has 1 card and single on desk, checking obligation!");
                         if (info.leading.ordinal() > new_deck[new_deck.length - 1].ordinal()) {
-                            // they tried their best
-//                            this.log("current player tried their best");
                             largest_single_obgligation = -1;
                         } else {
-//                            this.logf("current player didnt try their best, leading=%s, largest=%s\n", info.leading, new_deck[new_deck.length - 1]);
                             largest_single_obgligation = current_turn;
                         }
                     } else {
@@ -514,7 +509,7 @@ public class Game {
             }
         }
         int card_total = deck_lengths[0] + deck_lengths[1] + deck_lengths[2] + deck_lengths[3];
-        int[] offsets = new int[4];
+        offsets = new int[4];
         for (int i = 0; i < 4; ++i) {
             if (groupInfo.collect_place) {
                 offsets[i] = -4 * deck_lengths[i] + card_total;
@@ -573,6 +568,10 @@ public class Game {
             stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+        // achievements
+        for (int i = 0; i < 4; i++) {
+            Achievement.executeAchievements(bot, new GameResult(), players.get(i).id(), i);
         }
     }
 
@@ -650,6 +649,9 @@ public class Game {
             }
             current.add("deck", _cards);
             starting_decks.add(current);
+        }
+        for (int i = 0; i < 4; i++) {
+            System.arraycopy(cards[i], 0, starting_cards[i], 0, 13);
         }
         game_sequence.add("starting_decks", starting_decks);
         this.execute(new SendMessage(gid, String.join(" > ", order)).parseMode(ParseMode.HTML), new EmptyCallback<>());
@@ -851,16 +853,16 @@ public class Game {
 
     private void log(Object o) {
         String date = sdf.format(new Date());
-        System.out.printf("[Game %d][%s] %s\n", id, date, o);
+        System.out.printf("[%s][Game %d] %s\n", date, id, o);
     }
 
     private void logf(String format, Object ...objs) {
         String date = sdf.format(new Date());
         Object[] _objs = new Object[objs.length + 2];
-        _objs[0] = id;
-        _objs[1] = date;
+        _objs[1] = id;
+        _objs[0] = date;
         System.arraycopy(objs, 0, _objs, 2, objs.length);
-        System.out.printf("[Game %d][%s] " + format + "\n", _objs);
+        System.out.printf("[%s][Game %d] " + format + "\n", _objs);
     }
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request) {
@@ -897,6 +899,40 @@ public class Game {
                 }
             }
         });
+    }
+
+    public class GameResult {
+        private GameResult() {
+        }
+
+        /**
+         * @return remaining cards for players
+         */
+        public Card[][] getEndDecks() {
+            return Game.this.cards;
+        }
+
+        /**
+         * @return starting cards for players
+         */
+        public Card[][] getStartDecks() {
+            return Game.this.starting_cards;
+        }
+
+        /**
+         * @return the user id's participated in the game
+         */
+        public int[] getPlayers() {
+            int[] uids = new int[4];
+            for (int i = 0; i < 4; i++) {
+                uids[i] = players.get(i).id();
+            }
+            return uids;
+        }
+
+        public int[] getOffsets() {
+            return offsets;
+        }
     }
 
     public static class HandInfo {

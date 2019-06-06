@@ -8,6 +8,7 @@ import com.pengrad.telegrambot.model.MessageEntity;
 import com.pengrad.telegrambot.model.Update;
 import me.lkp111138.deebot.commands.*;
 import me.lkp111138.deebot.game.Game;
+import me.lkp111138.deebot.game.achievement.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,6 +36,8 @@ public class DeeBot {
             }
             return UpdatesListener.CONFIRMED_UPDATES_ALL;
         });
+
+        // commands
         commands.put("start", new StartCommand());
         commands.put("play", new PlayCommand());
         commands.put("startgame", commands.get("play"));
@@ -49,6 +52,20 @@ public class DeeBot {
         commands.put("setlang", new SetLangCommand());
         commands.put("help", new HelpCommand());
         commands.put("feedback", new FeedbackCommand());
+
+        // achievements
+        Achievement.registerAchievement(new FirstGameAchievement());
+        Achievement.registerAchievement(new FirstWinAchievement());
+        Achievement.registerAchievement(new PlayWithMintAchievement());
+        Achievement.registerAchievement(new FirstBloodAchievement());
+        Achievement.registerAchievement(new RookieAchievement());
+        Achievement.registerAchievement(new FamiliarizedAchievement());
+        Achievement.registerAchievement(new AddictedAchievement());
+        Achievement.registerAchievement(new AmateurAchievement());
+        Achievement.registerAchievement(new AdeptAchievement());
+        Achievement.registerAchievement(new ExpertAchievement());
+        Achievement.registerAchievement(new LoseItAllAchievement());
+        Achievement.registerAchievement(new DeepFriedAchievement());
     }
 
     private void processUpdate(Update update) {
@@ -96,7 +113,6 @@ public class DeeBot {
         }
         if (query != null) {
             Game g = Game.byUser(query.from().id());
-            System.out.println(query.data());
             if (g != null) {
                 try {
                     if (g.callback(query)) {
@@ -112,7 +128,6 @@ public class DeeBot {
             if (SetLangCommand.callback(bot, query)) {
                 return;
             }
-            System.out.println(query.data());
         }
     }
 

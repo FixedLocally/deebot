@@ -139,7 +139,7 @@ public class Translation {
     public String HELP() {
         return "**Commands**\n" +
                 "\n" +
-                "/stat - View your stats.\n" +
+                "/stats - View your stats.\n" +
                 "/help - Shows help.\n" +
                 "\n" +
                 "**Group only commands**\n" +
@@ -159,6 +159,53 @@ public class Translation {
                 "\n" +
                 "/runinfo - Displays some info.\n" +
                 "/ping - Unknown command.";
+    }
+
+    public String ACHIEVEMENT_UNLOCKED() {
+        return "Achievement Unlocked!\n";
+    }
+
+    public String ACHIEVEMENT_PM(String achv_key) {
+        switch (achv_key) {
+            case "FIRST_GAME":
+                return "**Newbie**\n" +
+                        "Play your first game.";
+            case "FIRST_WIN":
+                return "**I won**\n" +
+                        "Win a game.";
+            case "PLAY_WITH_MINT":
+                return "**You need a mint?**\n" +
+                        "Play a game with the developer.";
+            case "FIRST_BLOOD":
+                return "**First Game**\n" +
+                        "Play your first game.";
+            case "ROOKIE":
+                return "**Rookie**\n" +
+                        "Play 50 games.";
+            case "FAMILIARIZED":
+                return "**Familiarized**\n" +
+                        "Play 200 games.";
+            case "ADDICTED":
+                return "**Addicted**\n" +
+                        "Play 1000 games. Loved the game don't you?";
+            case "AMATEUR":
+                return "**Amateur**\n" +
+                        "Win 20 games.";
+            case "ADEPT":
+                return "**Adept**\n" +
+                        "Win 100 games. That's impressive.";
+            case "EXPERT":
+                return "**Expert**\n" +
+                        "Win 500 games. That's insane!";
+            case "LOSE_IT_ALL":
+                return "**Lose it all**\n" +
+                        "Lose a game without playing a single card. Oof.";
+            case "DEEP_FRIED":
+                return "**Deep fried**\n" +
+                        "Win a game while your opponents do not get a chance to play a single card.";
+            default:
+                return achv_key;
+        }
     }
 
     private static HashMap<String, Translation> translations;
