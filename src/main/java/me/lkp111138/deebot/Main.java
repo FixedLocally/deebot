@@ -53,7 +53,7 @@ public class Main {
             return getConnection();
         } catch (SQLException e) {
             try {
-                conn = DriverManager.getConnection(String.format("jdbc:mysql://%s/%s?user=%s&password=%s&useSSL=false", System.getProperty("db.host"), System.getProperty("db.name"), System.getProperty("db.user"), System.getProperty("db.pwd")));
+                conn = DriverManager.getConnection(String.format("jdbc:mysql://%s/%s?user=%s&password=%s&useSSL=false&autoReconnect=true", System.getProperty("db.host"), System.getProperty("db.name"), System.getProperty("db.user"), System.getProperty("db.pwd")));
                 return conn;
             } catch (SQLException e1) {
                 System.err.println("Couldn't reconnect!");

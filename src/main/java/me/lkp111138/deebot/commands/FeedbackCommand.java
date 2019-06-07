@@ -2,6 +2,7 @@ package me.lkp111138.deebot.commands;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Message;
+import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.ForwardMessage;
 import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.Main;
@@ -27,6 +28,7 @@ public class FeedbackCommand implements Command {
                             "in %s [%d]:\n%s", msg.from().id(), msg.from().firstName(), msg.chat().title(),
                     msg.chat().id(), comment);
             SendMessage req = new SendMessage(Main.BOT_OWNER, message);
+            req.parseMode(ParseMode.HTML);
             bot.execute(req);
         }
 
