@@ -177,19 +177,107 @@ public class TraditionalChinese extends Translation {
     public String CLOSE() {
         return "關閉";
     }
-
     @Override
     public String ACHIEVEMENT_UNLOCKED() {
         return "解鎖成就！\n";
     }
-
     @Override
     public String ACHV_UNLOCKED() {
         return "已解鎖成就：\n";
     }
-
     @Override
     public String A_TOTAL_OF() {
         return "合共 %d 個";
+    }
+
+    @Override
+    public String HELP() {
+        return "**指令列表**\n" +
+                "\n" +
+                "/stats - 顯示統計數據。\n" +
+                "/achv - 顯示你已解鎖的成就。\n" +
+                "/help - 顯示此列表。\n" +
+                "\n" +
+                "**群組指令**\n" +
+                "\n" +
+                "/play - 開始新遊戲。\n" +
+                "/startgame - 與 /play 相同\n" +
+                "/join - 加入遊戲。\n" +
+                "/flee - 在遊戲開始前離開遊戲。\n" +
+                "/extend - 延長加入遊戲階段\n" +
+                "\n" +
+                "**僅限群組管理員**\n" +
+                "\n" +
+                "/config - 在私訊中更改群組遊戲設定。\n" +
+                "/setlang - 更改群組語言\n" +
+                "\n" +
+                "**技術指令**\n" +
+                "\n" +
+                "/runinfo - 顯示某些資料。\n" +
+                "/ping - 未知的指令。";
+    }
+
+    @Override
+    public String ACHIEVEMENT_TITLE(String achv_key) {
+        switch (achv_key) {
+            case "FIRST_GAME":
+                return "**新手**\n";
+            case "FIRST_WIN":
+                return "**我贏了！**\n";
+            case "PLAY_WITH_MINT":
+                return "**You need a mint?**\n";
+            case "FIRST_BLOOD":
+                return "**第一滴血**\n";
+            case "ROOKIE":
+                return "**初出茅廬**\n";
+            case "FAMILIARIZED":
+                return "**熟手**\n";
+            case "ADDICTED":
+                return "**上癮**\n";
+            case "AMATEUR":
+                return "**業餘選手**\n";
+            case "ADEPT":
+                return "**老手**\n";
+            case "EXPERT":
+                return "**專家**\n";
+            case "LOSE_IT_ALL":
+                return "**一敗塗地**\n";
+            case "DEEP_FRIED":
+                return "**油炸**\n";
+            default:
+                return achv_key;
+        }
+    }
+
+    @Override
+    public String ACHIEVEMENT_DESC(String achv_key) {
+        switch (achv_key) {
+            case "FIRST_GAME":
+                return "玩一場遊戲。";
+            case "FIRST_WIN":
+                return "贏一場遊戲。";
+            case "PLAY_WITH_MINT":
+                return "個遊戲開發者玩一場。";
+            case "FIRST_BLOOD":
+                return "輸一場遊戲，同時失去籌碼。";
+            case "ROOKIE":
+                return "玩 50 場遊戲。";
+            case "FAMILIARIZED":
+                return "玩 200 場遊戲。";
+            case "ADDICTED":
+                return "玩 1000 場遊戲。";
+            case "AMATEUR":
+                return "贏 20 場遊戲。";
+            case "ADEPT":
+                return "贏 100 場遊戲。";
+            case "EXPERT":
+                return "贏 500 場遊戲。";
+            case "LOSE_IT_ALL":
+                return "在一場遊戲中輸 13 張牌。";
+            case "DEEP_FRIED":
+                return "贏一場遊戲，當中你的對手並未打出任何一張牌。";
+            default:
+                return achv_key;
+        }
     }
 }

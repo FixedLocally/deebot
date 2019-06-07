@@ -214,7 +214,7 @@ public class Translation {
             case "PLAY_WITH_MINT":
                 return "Play a game with the developer.";
             case "FIRST_BLOOD":
-                return "Play your first game.";
+                return "Lose a game along with some chips.";
             case "ROOKIE":
                 return "Play 50 games.";
             case "FAMILIARIZED":
