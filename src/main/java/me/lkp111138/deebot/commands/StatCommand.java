@@ -30,7 +30,8 @@ public class StatCommand implements Command {
                             String.format("Lost cards: %d\n", rs.getInt(5)) +
                             String.format("Won/Total games: %d / %d (%.2f%%)\n", rs.getInt(3), rs.getInt(4), 100.0 * rs.getInt(3) / rs.getInt(4)) +
                             String.format("Won/Lost cards: %d / %d (%.2f%%)\n", rs.getInt(2), rs.getInt(5), 100.0 * rs.getInt(2) / rs.getInt(5)) +
-                            String.format("Chips: %d", rs.getInt(1));
+                            String.format("Chips: %d", rs.getInt(1)) +
+                            String.format("Chips per game: %.1f", (rs.getInt(1) - 2000.0) / rs.getInt(4));
                     bot.execute(new SendMessage(msg.chat().id(), sb).replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
                 } else {
                     bot.execute(new SendMessage(msg.chat().id(), "You haven't played a game yet!").replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));

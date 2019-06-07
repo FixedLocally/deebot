@@ -9,7 +9,6 @@ import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
 import me.lkp111138.deebot.translation.Translation;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,9 +20,8 @@ public class AchvCommand implements Command {
         if (msg.replyToMessage() != null) {
             target = msg.replyToMessage().from();
         }
-        try (Connection conn = Main.getConnection()) {
+        try (PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT achv FROM achv_log WHERE tgid=?")) {
             Translation translation = Translation.get(DeeBot.lang(msg.chat().id()));
-            PreparedStatement stmt = conn.prepareStatement("SELECT achv FROM achv_log WHERE tgid=?");
             stmt.setInt(1, target.id());
             ResultSet rs = stmt.executeQuery();
             StringBuilder sb = new StringBuilder(translation.ACHV_UNLOCKED());
