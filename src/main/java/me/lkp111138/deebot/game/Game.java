@@ -256,6 +256,7 @@ public class Game {
                 Card[] proposed = new Card[0];
                 if (args.length > 1) {
                     proposed = map_to_card(args[1].split("_"));
+                    Arrays.sort(proposed, Comparator.comparingInt(Enum::ordinal));
                     current_proposal = args[1];
                 } else {
                     current_proposal = "";
