@@ -53,6 +53,7 @@ public class DeeBot {
         commands.put("help", new HelpCommand());
         commands.put("feedback", new FeedbackCommand());
         commands.put("achv", new AchvCommand());
+        commands.put("toggle69", new Toggle69Command());
 
         // achievements
         Achievement.registerAchievement(new FirstGameAchievement());
@@ -101,7 +102,7 @@ public class DeeBot {
                 String command = msg.text().substring(offset + 1);
                 String[] segments = command.split(" ");
                 String[] cmd = segments[0].split("@");
-                if (cmd.length > 1 && !cmd[1].equals(System.getProperty("bot.username"))) {
+                if (cmd.length > 1 && !cmd[1].equals(Main.getConfig("bot.username"))) {
                     // command not intended for me
                     return;
                 }

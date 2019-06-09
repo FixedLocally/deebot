@@ -186,7 +186,7 @@ public class Game {
                         // for some reason we cant deliver the msg to the user, so we ask them to start me in the group
                         Game.this.execute(new SendMessage(msg.chat().id(), Game.this.translation.START_ME_FIRST())
                                 .replyToMessageId(msg.messageId())
-                                .replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(Game.this.translation.START_ME()).url("https://t.me/" + System.getProperty("bot.username"))})));
+                                .replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(Game.this.translation.START_ME()).url("https://t.me/" + Main.getConfig("bot.username"))})));
                     }
                 }
 
@@ -733,7 +733,7 @@ public class Game {
             String msg = sb.toString();
             SendMessage send = new SendMessage(gid, msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
             group.username();
-            send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.PICK_CARDS()).url("https://t.me/" + System.getProperty("bot.username"))}));
+            send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.PICK_CARDS()).url("https://t.me/" + Main.getConfig("bot.username"))}));
             this.execute(send);
         }
     }

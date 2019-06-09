@@ -33,7 +33,7 @@ public class Main {
         Class.forName("com.mysql.jdbc.Driver");
         conn = DriverManager.getConnection(String.format("jdbc:mysql://%s/%s?user=%s&password=%s&useSSL=false", config.get("db.host"), config.get("db.name"), config.get("db.user"), config.get("db.pwd")));
         OkHttpClient retrying_client = new OkHttpClient.Builder().retryOnConnectionFailure(true).build();
-        TelegramBot bot = new TelegramBot.Builder(config.get("bot.token").toString()).okHttpClient(retrying_client).build();
+        TelegramBot bot = new TelegramBot.Builder(config.getProperty("bot.token")).okHttpClient(retrying_client).build();
         new DeeBot(bot);
         Game.init(bot);
         System.out.println("Initialization complete\n");
@@ -58,5 +58,9 @@ public class Main {
                 throw e;
             }
         }
+    }
+
+    public static String getConfig(String key) {
+        return config.getProperty(key);
     }
 }

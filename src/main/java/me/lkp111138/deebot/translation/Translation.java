@@ -248,4 +248,10 @@ public class Translation {
         }
         return translations.getOrDefault(lang, DEFAULT);
     }
+
+    public String JOIN_69_PROTEST() {
+        return "Join the protest today, extradition to China must not be granted.\n" +
+                "See you at Victoria Park at 3pm today!\n" +
+                "/toggle69 to turn this off and start games normally.";
+    }
 }

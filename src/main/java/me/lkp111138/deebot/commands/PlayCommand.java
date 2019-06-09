@@ -27,7 +27,7 @@ public class PlayCommand implements Command {
             Game g = Game.byGroup(msg.chat().id());
             if (g == null) {
                 try (Connection conn = Main.getConnection()) {
-                    PreparedStatement stmt = conn.prepareStatement("SELECT chips_per_card, wait_time, turn_wait_time, lang, fry, collect_place FROM `groups` WHERE gid=?");
+                    PreparedStatement stmt = conn.prepareStatement("SELECT chips_per_card, wait_time, turn_wait_time, lang, fry, collect_place, protest_mode FROM `groups` WHERE gid=?");
                     stmt.setLong(1, msg.chat().id());
                     ResultSet rs = stmt.executeQuery();
                     GroupInfo info;
@@ -42,6 +42,10 @@ public class PlayCommand implements Command {
                         chips = rs.getInt(1);
                         fry = rs.getBoolean(5);
                         collect_place = rs.getBoolean(6);
+                        if (rs.getInt(7) > 0) {
+                            bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).JOIN_69_PROTEST()).replyToMessageId(msg.messageId()));
+                            return;
+                        }
                     } else {
                         // insert
                         PreparedStatement stmt1 = conn.prepareStatement("INSERT INTO `groups` (gid) VALUES (?)");

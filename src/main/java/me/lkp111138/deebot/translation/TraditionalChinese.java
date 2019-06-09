@@ -280,4 +280,13 @@ public class TraditionalChinese extends Translation {
                 return achv_key;
         }
     }
+
+    @Override
+    public String JOIN_69_PROTEST() {
+        return "今日三點去維園參加反送中遊行！\n" +
+                "今日唔出嚟，可能以後再冇機會！\n" +
+                "香港人，為自己企出嚟！\n" +
+                "三點鐘維園，約定你！\n" +
+                "用 /toggle69 轉返正常模式嚟開game。";
+    }
 }
