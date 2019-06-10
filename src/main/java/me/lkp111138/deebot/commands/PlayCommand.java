@@ -44,7 +44,7 @@ public class PlayCommand implements Command {
                         collect_place = rs.getBoolean(6);
                         if (rs.getInt(7) > 0) {
                             bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).JOIN_69_PROTEST()).replyToMessageId(msg.messageId()));
-                            return;
+//                            return;
                         }
                     } else {
                         // insert
