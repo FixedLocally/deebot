@@ -250,8 +250,11 @@ public class Translation {
     }
 
     public String JOIN_69_PROTEST() {
-        return "Join the protest today, extradition to China must not be granted.\n" +
-                "See you at Victoria Park at 3pm today!\n" +
-                "/toggle69 to turn this off and start games normally.";
+        return "No evidence is needed to extradite any given HK citizen.\n" +
+                "HongKongers, let's defend the last line of defense to our judicial system.\n" +
+                "Stop the next Lee Bo incident.\n" +
+                "Stop HK citizens from ever being the next Li Wang Yang.\n" +
+                "Jun 11 - See you there.\n" +
+                "Use /toggle69 to turn this message off.";
     }
 }

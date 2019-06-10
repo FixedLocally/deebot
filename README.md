@@ -1,9 +1,11 @@
 # deebot
-This bot provides its implementation of the Big 2 (dee) card game. You may find this bot [here](https://t.me/jokebig2bot).
+This bot provides its implementation of the Big 2 (dee) card game. You may find this bot [here](https://t.me/jokebig2bot).<br>
+
 
 ## Commands
-/stat - View your stats.<br>
-/help - Shows help.
+/stats - View your stats.<br>
+/help - Shows help.<br>
+/achv - Show achievements
 #### Group only commands
 /play - Starts a new game.<br>
 /startgame - Alias of /play<br>

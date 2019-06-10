@@ -283,10 +283,13 @@ public class HongKongChinese extends Translation {
 
     @Override
     public String JOIN_69_PROTEST() {
-        return "今日三點去維園參加反送中遊行！\n" +
-                "今日唔出嚟，可能以後再冇機會！\n" +
-                "香港人，為自己企出嚟！\n" +
-                "三點鐘維園，約定你！\n" +
-                "用 /toggle69 轉返正常模式嚟開game。";
+        return "#懶人包 \n" +
+                "引渡你 唔需要證據 哪怕你乜都冇做過\n" +
+                "香港人 一齊守住我哋司法嘅防線 唔好俾惡法通過\n" +
+                "唔好再俾香港出現下一個李波\n" +
+                "唔好俾機會香港人成為下一個李旺陽\n" +
+                "6月11日晚 #不散\n" +
+                "#反惡法 #反送中 #香港人撐香港" +
+                "用 /toggle69 嚟停止出呢段訊息。";
     }
 }
