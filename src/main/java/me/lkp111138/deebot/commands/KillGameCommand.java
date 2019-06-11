@@ -23,29 +23,31 @@ public class KillGameCommand implements Command {
         //            case 401742123:
         //                break;
         // whitelist
-        if (msg.from().id() == Main.BOT_OWNER) {// kill game
-            if (Game.byGroup(msg.chat().id()) != null) {
-                Game.byGroup(msg.chat().id()).kill();
-            }
-        } else {
-            bot.execute(new GetChatMember(msg.chat().id(), msg.from().id()), new Callback<GetChatMember, GetChatMemberResponse>() {
-                @Override
-                public void onResponse(GetChatMember request, GetChatMemberResponse response) {
-                    ChatMember chatMember = response.chatMember();
-                    if (chatMember.status() == ChatMember.Status.administrator || chatMember.status() == ChatMember.Status.creator) {
-                        // kill game
-                        if (Game.byGroup(msg.chat().id()) != null) {
-                            Game.byGroup(msg.chat().id()).kill();
-                        }
+        switch (msg.from().id()) {
+            case 321989382:
+                return;
+            case Main.BOT_OWNER:
+                if (Game.byGroup(msg.chat().id()) != null) {
+                    Game.byGroup(msg.chat().id()).kill();
+                }
+        }
+        bot.execute(new GetChatMember(msg.chat().id(), msg.from().id()), new Callback<GetChatMember, GetChatMemberResponse>() {
+            @Override
+            public void onResponse(GetChatMember request, GetChatMemberResponse response) {
+                ChatMember chatMember = response.chatMember();
+                if (chatMember.status() == ChatMember.Status.administrator || chatMember.status() == ChatMember.Status.creator) {
+                    // kill game
+                    if (Game.byGroup(msg.chat().id()) != null) {
+                        Game.byGroup(msg.chat().id()).kill();
                     }
                 }
+            }
 
-                @Override
-                public void onFailure(GetChatMember request, IOException e) {
+            @Override
+            public void onFailure(GetChatMember request, IOException e) {
 
-                }
-            });
-        }
+            }
+        });
 
     }
 }
