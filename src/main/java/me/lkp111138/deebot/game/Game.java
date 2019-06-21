@@ -40,7 +40,7 @@ public class Game {
     private long start_time;
     private long gid;
     private Chat group;
-    private String current_proposal = "";
+    private List<Card> current_proposal = new ArrayList<>();
     private boolean started = false;
     private boolean first_round = true;
     private boolean all_passed = false;
@@ -246,6 +246,7 @@ public class Game {
                 break;
             }
         }
+        log(payload);
         switch (args[0]) {
             case "propose":
                 if (tgid != players.get(current_turn).id()) {
@@ -253,18 +254,23 @@ public class Game {
                     return true;
                 }
                 // we check if the player actually have the cards, if not, reset
-                Card[] proposed = new Card[0];
                 if (args.length > 1) {
-                    proposed = map_to_card(args[1].split("_"));
-                    Arrays.sort(proposed, Comparator.comparingInt(Enum::ordinal));
-                    current_proposal = args[1];
+                    Card proposed = Card.valueOf(args[1]);
+                    if (current_proposal.contains(proposed)) {
+                        logf("contains %s", proposed);
+                        current_proposal.remove(proposed);
+                    } else {
+                        logf("not contains %s", proposed);
+                        current_proposal.add(proposed);
+                    }
+                    current_proposal.sort(Comparator.comparingInt(Enum::ordinal));
                 } else {
-                    current_proposal = "";
+                    current_proposal = new ArrayList<>();
                 }
-                for (Card c : proposed) {
+                for (Card c : current_proposal) {
                     if (Arrays.binarySearch(cards[current_turn], c) < 0) {
                         // non existent card!
-                        current_proposal = "";
+                        current_proposal = new ArrayList<>();
                     }
                 }
                 // ok, proposal valid
@@ -278,7 +284,7 @@ public class Game {
                     return true;
                 }
                 if (args.length > 1) {
-                    Card[] hand = map_to_card(args[1].split("_"));
+                    Card[] hand = current_proposal.toArray(new Card[0]);
                     play(hand, answer, callbackQuery, args);
                     update_deck(i);
                 }
@@ -401,9 +407,10 @@ public class Game {
                 current_deck[Arrays.binarySearch(current_deck, card)] = Card.ON99;
                 Arrays.sort(cards[current_turn]);
             }
+            String card_str = String.join(" ", current_proposal);
             if (callbackQuery != null) {
                 autopass_count = 0;
-                this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), replace_all_suits(args[1].replaceAll("_", "  "))), new EmptyCallback<>());
+                this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), card_str), new EmptyCallback<>());
                 // lets update the game sequence
                 JsonArray array = game_sequence.getAsJsonArray("sequence");
                 if (array == null) {
@@ -421,9 +428,9 @@ public class Game {
             }
             User current_player = players.get(current_turn);
             if (current_player.username() != null) {
-                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), current_player.username(), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), current_player.username(), current_player.firstName()) + card_str).parseMode(ParseMode.HTML).disableWebPagePreview(true));
             } else {
-                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT(), current_player.firstName()) + replace_all_suits(args[1].replaceAll("_", "  "))).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT(), current_player.firstName()) + card_str).parseMode(ParseMode.HTML).disableWebPagePreview(true));
             }
             if (current_deck.length == hand.length) {
                 // player won
@@ -683,7 +690,7 @@ public class Game {
 
     private void start_turn() {
         // ask the current player to play, while sending them the necessary info
-        current_proposal = "";
+        current_proposal = new ArrayList<>();
         if (desk_user == players.get(current_turn)) {
             all_passed = true;
             desk_user = null;
@@ -754,32 +761,21 @@ public class Game {
 
     private InlineKeyboardMarkup buttons_from_deck() {
         Card[] deck = cards[current_turn];
-        Card[] proposed_cards = map_to_card(current_proposal.split("_"));
         int rows = 3 + deck.length / 4;
         InlineKeyboardButton[][] buttons = new InlineKeyboardButton[rows][0];
-        String _proposal = current_proposal.length() > 0 ? current_proposal + "_" : "";
         for (int i = 0; i < rows - 2; ++i) {
             buttons[i] = new InlineKeyboardButton[Math.min(4, deck.length - 4 * i)];
             for (int j = 4 * i; j < Math.min(4 * i + 4, deck.length); ++j) {
-                Arrays.sort(proposed_cards);
-                boolean chosen = Arrays.binarySearch(proposed_cards, deck[j]) >= 0;
-                String new_proposal;
-                if (chosen) {
-                    new_proposal = _proposal.replace(deck[j].name() + "_", "");
-                } else {
-                    new_proposal = _proposal + deck[j].name();
-                }
-                buttons[i][j - 4 * i] = new InlineKeyboardButton(replace_all_suits((chosen ? "\u2705 " : "") + deck[j].name())).callbackData("propose:" + new_proposal.replaceAll("__", "_").replaceAll("^_?([^_]+)_?$", "$1"));
+                boolean chosen = current_proposal.contains(deck[j]);
+//                logf("contains %s: %s", deck[j], chosen);
+                buttons[i][j - 4 * i] = new InlineKeyboardButton(replace_all_suits((chosen ? "\u2705 " : "") + deck[j].name())).callbackData("propose:" + deck[j]);
             }
         }
-        Card[] proposal_cards = map_to_card(current_proposal.split("_"));
-        Arrays.sort(proposal_cards);
-        String btn_play = replace_all_suits(String.join("  ", proposal_cards));
-        if (proposal_cards.length == 0) {
+        String btn_play;
+        if (current_proposal.size() == 0) {
             btn_play = this.translation.CHOOSE_SOME_CARDS();
         } else {
-            HandInfo info = new HandInfo(proposal_cards);
-            btn_play = info.type + btn_play;
+            HandInfo info = new HandInfo(current_proposal.toArray(new Card[0]));
             btn_play = this.translation.HAND_TYPE(info.type) + replace_all_suits(String.join(" ", current_proposal));
         }
         buttons[rows - 2] =  new InlineKeyboardButton[]{new InlineKeyboardButton(btn_play).callbackData("play:" + current_proposal)};
@@ -1110,7 +1106,7 @@ public class Game {
         }
     }
 
-    enum HandType {
+    public enum HandType {
         NONE,
         SINGLE,
         PAIR,
