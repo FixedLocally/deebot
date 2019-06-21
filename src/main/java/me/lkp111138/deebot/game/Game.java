@@ -780,6 +780,7 @@ public class Game {
         } else {
             HandInfo info = new HandInfo(proposal_cards);
             btn_play = info.type + btn_play;
+            btn_play = this.translation.HAND_TYPE(info.type) + replace_all_suits(String.join(" ", current_proposal));
         }
         buttons[rows - 2] =  new InlineKeyboardButton[]{new InlineKeyboardButton(btn_play).callbackData("play:" + current_proposal)};
         buttons[rows - 1] = new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.PASS()).callbackData("pass")};

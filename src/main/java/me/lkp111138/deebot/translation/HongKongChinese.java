@@ -1,5 +1,7 @@
 package me.lkp111138.deebot.translation;
 
+import me.lkp111138.deebot.game.Game;
+
 public class HongKongChinese extends Translation {
     @Override
     public String BOT_NAME() {
@@ -291,5 +293,31 @@ public class HongKongChinese extends Translation {
                 "6月11日晚 #不散\n" +
                 "#反惡法 #反送中 #香港人撐香港" +
                 "用 /toggle69 嚟停止出呢段訊息。";
+    }
+
+    public String HAND_TYPE(Game.HandType type) {
+        switch (type) {
+            case NONE:
+                return "";
+            case PAIR:
+                return "啤";
+            case FLUSH:
+                return "花";
+            case SINGLE:
+                return "單張";
+            case TRIPLE:
+                return "三條";
+            case STRAIGHT:
+                return "蛇";
+            case FULL_HOUSE:
+                return "夫佬";
+            case FOUR_OF_A_KIND:
+                return "四條";
+            case STRAIGHT_FLUSH:
+                return "同花順";
+            default:
+                // unreachable code
+                throw new IllegalStateException("Unexpected value: " + type);
+        }
     }
 }

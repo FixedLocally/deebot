@@ -1,5 +1,7 @@
 package me.lkp111138.deebot.translation;
 
+import me.lkp111138.deebot.game.Game;
+
 public class TraditionalChinese extends Translation {
     @Override
     public String BOT_NAME() {
@@ -291,5 +293,31 @@ public class TraditionalChinese extends Translation {
                 "6月11日晚 #不散\n" +
                 "#反惡法 #反送中 #香港人撐香港" +
                 "用 /toggle69 嚟停止出呢段訊息。";
+    }
+
+    public String HAND_TYPE(Game.HandType type) {
+        switch (type) {
+            case NONE:
+                return "";
+            case PAIR:
+                return "對子";
+            case FLUSH:
+                return "同花";
+            case SINGLE:
+                return "散牌";
+            case TRIPLE:
+                return "三條";
+            case STRAIGHT:
+                return "順子";
+            case FULL_HOUSE:
+                return "葫蘆";
+            case FOUR_OF_A_KIND:
+                return "四條";
+            case STRAIGHT_FLUSH:
+                return "同花順";
+            default:
+                // unreachable code
+                throw new IllegalStateException("Unexpected value: " + type);
+        }
     }
 }

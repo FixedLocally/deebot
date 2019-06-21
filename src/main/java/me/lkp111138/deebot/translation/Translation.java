@@ -1,5 +1,7 @@
 package me.lkp111138.deebot.translation;
 
+import me.lkp111138.deebot.game.Game;
+
 import java.util.HashMap;
 
 public class Translation {
@@ -256,5 +258,31 @@ public class Translation {
                 "Stop HK citizens from ever being the next Li Wang Yang.\n" +
                 "Jun 11 - See you there.\n" +
                 "Use /toggle69 to turn this message off.";
+    }
+
+    public String HAND_TYPE(Game.HandType type) {
+        switch (type) {
+            case NONE:
+                return "";
+            case PAIR:
+                return "Pair";
+            case FLUSH:
+                return "Flush";
+            case SINGLE:
+                return "Single";
+            case TRIPLE:
+                return "Triple";
+            case STRAIGHT:
+                return "Straight";
+            case FULL_HOUSE:
+                return "Full House";
+            case FOUR_OF_A_KIND:
+                return "Four of a Kind";
+            case STRAIGHT_FLUSH:
+                return "Straight Flush";
+            default:
+                // unreachable code
+                throw new IllegalStateException("Unexpected value: " + type);
+        }
     }
 }
