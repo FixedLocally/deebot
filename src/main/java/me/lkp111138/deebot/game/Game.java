@@ -407,7 +407,7 @@ public class Game {
                 current_deck[Arrays.binarySearch(current_deck, card)] = Card.ON99;
                 Arrays.sort(cards[current_turn]);
             }
-            String card_str = String.join(" ", current_proposal);
+            String card_str = replace_all_suits(String.join(" ", current_proposal));
             if (callbackQuery != null) {
                 autopass_count = 0;
                 this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), card_str), new EmptyCallback<>());
