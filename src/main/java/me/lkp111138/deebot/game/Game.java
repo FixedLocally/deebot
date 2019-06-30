@@ -64,14 +64,13 @@ public class Game {
     private int[] offsets;
 
     private static Map<Long, Game> games = new HashMap<>();
-    private static Map<Integer, Game> uid_games = new HashMap<>();
+    public static boolean maintMode = false; // true=disallow starting games
     private static TelegramBot bot;
     private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(2);
-    private static int[] remind_seconds = new int[]{15, 30, 60, 90, 120, 180};
+    private static Map<Integer, Game> uidGames = new HashMap<>();
     private static final int CARDS_PER_PLAYER = 13;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-
-    public static boolean maint_mode = false; // true=disallow starting games
+    private static int[] remindSeconds = new int[]{15, 30, 60, 90, 120, 180};
 
     public static void init(TelegramBot _bot) {
         bot = _bot;
@@ -79,22 +78,6 @@ public class Game {
 
     public static Game byGroup(long gid) {
         return games.get(gid);
-    }
-
-    public static Game byUser(int tgid) {
-        return uid_games.get(tgid);
-    }
-
-    public static RunInfo runInfo() {
-        int total = games.size();
-        int players = uid_games.size();
-        int running = 0;
-        for(Game game : games.values()) {
-            if (game.started) {
-                ++running;
-            }
-        }
-        return new RunInfo(running, total, players);
     }
 
     public Game(Message msg, int chips, int wait, GroupInfo groupInfo) throws ConcurrentGameException {
@@ -105,12 +88,12 @@ public class Game {
         }
         this.chips = chips;
         this.gid = gid;
-        this.turnWait = groupInfo.wait_time;
+        this.turnWait = groupInfo.waitTime;
         this.groupInfo = groupInfo;
         this.group = msg.chat();
         this.lang = DeeBot.lang(gid);
         this.translation = me.lkp111138.deebot.translation.Translation.get(this.lang);
-        if (maint_mode) {
+        if (maintMode) {
             // disallow starting games
             this.execute(new SendMessage(gid, this.translation.MAINT_MODE_NOTICE()).parseMode(ParseMode.HTML), new EmptyCallback<>());
             return;
@@ -133,30 +116,46 @@ public class Game {
             e.printStackTrace();
             this.execute(new SendMessage(msg.chat().id(), this.translation.ERROR() + e.getMessage()).replyToMessageId(msg.messageId()));
         }
-        String[] check_cross = new String[]{"\uD83D\uDEAB", "\u2705"};
-        this.execute(new SendMessage(gid, String.format(this.translation.GAME_START_ANNOUNCEMENT(), msg.from().id(), msg.from().firstName(), wait, check_cross[groupInfo.collect_place ? 1 : 0], check_cross[groupInfo.fry ? 1 : 0], check_cross[1], id)).parseMode(ParseMode.HTML), new EmptyCallback<>());
+        String[] checkCross = new String[]{"\uD83D\uDEAB", "\u2705"};
+        this.execute(new SendMessage(gid, String.format(this.translation.GAME_START_ANNOUNCEMENT(), msg.from().id(), msg.from().firstName(), wait, checkCross[groupInfo.collectPlace ? 1 : 0], checkCross[groupInfo.fry ? 1 : 0], checkCross[1], id)).parseMode(ParseMode.HTML), new EmptyCallback<>());
         games.put(gid, this);
         addPlayer(msg);
         startTime = System.currentTimeMillis() + wait * 1000;
         int i;
         i = 0;
-        while (wait > remind_seconds[i]) {
+        while (wait > remindSeconds[i]) {
             ++i;
         }
 //        this.log("scheduled remind task");
-        schedule(this::remind, (wait - remind_seconds[--i]) * 1000);
+        schedule(this::remind, (wait - remindSeconds[--i]) * 1000);
         this.logf("Game created in %s [%d]", msg.chat().title(), msg.chat().id());
+    }
+
+    public static Game byUser(int tgid) {
+        return uidGames.get(tgid);
+    }
+
+    public static RunInfo runInfo() {
+        int total = games.size();
+        int players = uidGames.size();
+        int running = 0;
+        for (Game game : games.values()) {
+            if (game.started) {
+                ++running;
+            }
+        }
+        return new RunInfo(running, total, players);
     }
 
     public void addPlayer(Message msg) {
         // if a player is in a dead game, remove them
         User from = msg.from();
-        Game g = uid_games.get(from.id());
+        Game g = uidGames.get(from.id());
         if (g != null && g.ended) {
-            uid_games.remove(from.id());
+            uidGames.remove(from.id());
         }
         // add to player list
-        if (!started && !players.contains(from) && !uid_games.containsKey(from.id()) && playerCount() < 4) {
+        if (!started && !players.contains(from) && !uidGames.containsKey(from.id()) && playerCount() < 4) {
             // notify player
             // .replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{}
             SendMessage send = new SendMessage(msg.from().id(), String.format(this.translation.JOIN_SUCCESS(), msg.chat().title().replace("*", "\\*"), this.id)).parseMode(ParseMode.Markdown);
@@ -174,7 +173,7 @@ public class Game {
                             return;
                         }
                         players.add(msg.from());
-                        uid_games.put(msg.from().id(), Game.this);
+                        uidGames.put(msg.from().id(), Game.this);
                         int count = playerCount();
                         Game.this.execute(new SendMessage(msg.chat().id(), String.format(Game.this.translation.JOINED_ANNOUNCEMENT(), msg.from().id(), msg.from().firstName(), count)).parseMode(ParseMode.HTML), new EmptyCallback<>());
 //                        Game.this.logf("%d / 4 players joined", count);
@@ -202,7 +201,7 @@ public class Game {
         // if not in game then do nothing
         // otherwise remove them
         if (!started && players.removeIf(user -> user.id() == tgid)) {
-            return uid_games.remove(tgid) != null;
+            return uidGames.remove(tgid) != null;
         }
         return false;
     }
@@ -219,18 +218,18 @@ public class Game {
         if (started) {
             return;
         }
-        cancel_future();
+        cancelFuture();
         startTime += 30000;
         startTime = Math.min(startTime, System.currentTimeMillis() + 180000);
         long seconds = (startTime - System.currentTimeMillis() + 999) / 1000;
         this.execute(new SendMessage(gid, String.format(this.translation.EXTENDED_ANNOUNCEMENT(), seconds)));
         int i;
         i = 0;
-        while (i < 6 && remind_seconds[i] < seconds) {
+        while (i < 6 && remindSeconds[i] < seconds) {
             ++i;
         }
 //        this.log("scheduled remind task");
-        schedule(this::remind, (seconds - remind_seconds[--i]) * 1000);
+        schedule(this::remind, (seconds - remindSeconds[--i]) * 1000);
     }
 
     public boolean callback(CallbackQuery callbackQuery) {
@@ -274,7 +273,7 @@ public class Game {
                     }
                 }
                 // ok, proposal valid
-                InlineKeyboardMarkup inlineKeyboardMarkup = buttons_from_deck();
+                InlineKeyboardMarkup inlineKeyboardMarkup = buttonsFromDeck();
                 this.execute(new EditMessageReplyMarkup(callbackQuery.message().chat().id(), callbackQuery.message().messageId()).replyMarkup(inlineKeyboardMarkup), new EmptyCallback<>());
                 processed = true;
                 break;
@@ -286,7 +285,7 @@ public class Game {
                 if (args.length > 1) {
                     Card[] hand = currentProposal.toArray(new Card[0]);
                     play(hand, answer, callbackQuery, args);
-                    update_deck(i);
+                    updateDeck(i);
                 }
                 processed = true;
                 break;
@@ -300,7 +299,7 @@ public class Game {
                 break;
             case "update":
                 // updates the deck
-                update_deck(i);
+                updateDeck(i);
                 processed = true;
                 break;
             case "sort":
@@ -309,14 +308,14 @@ public class Game {
                     if (i < 4) {
                         List<Card> _cards = Arrays.asList(cards[i]);
                         _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_FACE()).callbackData("sort:face")})));
+                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), this.translation.YOUR_DECK() + replaceAllSuits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_FACE()).callbackData("sort:face")})));
                         _cards.sort(Comparator.comparingInt(Enum::ordinal));
                     }
                     sortBySuit[i] = true;
                 } else {
                     i = getPlayerIndexFromQuery(callbackQuery);
                     if (i < 4) {
-                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})));
+                        this.execute(new EditMessageText(callbackQuery.from().id(), callbackQuery.message().messageId(), this.translation.YOUR_DECK() + replaceAllSuits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})));
                     }
                     sortBySuit[i] = false;
                 }
@@ -337,14 +336,14 @@ public class Game {
         return i;
     }
 
-    private void update_deck(int i) {
+    private void updateDeck(int i) {
         if (sortBySuit[i]) {
             List<Card> _cards = Arrays.asList(cards[i]);
             _cards.sort(Comparator.comparingInt(card -> card.getSuit().ordinal()));
-            this.execute(new EditMessageText(players.get(i).id(), deckMsgid[i], this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_FACE()).callbackData("sort:face")})));
+            this.execute(new EditMessageText(players.get(i).id(), deckMsgid[i], this.translation.YOUR_DECK() + replaceAllSuits(String.join(" ", _cards))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_FACE()).callbackData("sort:face")})));
             _cards.sort(Comparator.comparingInt(Enum::ordinal));
         } else {
-            this.execute(new EditMessageText(players.get(i).id(), deckMsgid[i], this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})));
+            this.execute(new EditMessageText(players.get(i).id(), deckMsgid[i], this.translation.YOUR_DECK() + replaceAllSuits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})));
         }
     }
 
@@ -356,11 +355,11 @@ public class Game {
                     // notify group too
                 }
                 // we can cancel the job here cuz we no longer need auto pass for this round
-                cancel_future(); // cancel that auto pass job
+                cancelFuture(); // cancel that auto pass job
                 // cancel their obligation if they dont have a eligible card
-                Card[] current_deck = cards[currentTurn];
+                Card[] currentDeck = cards[currentTurn];
                 if (cards[(currentTurn + 1) & 3].length == 1 && deskInfo.type == HandType.SINGLE) {
-                    if (current_deck[current_deck.length - 1].ordinal() < deskInfo.leading.ordinal()) {
+                    if (currentDeck[currentDeck.length - 1].ordinal() < deskInfo.leading.ordinal()) {
                         largestSingleObgligation = -1;
                     } else {
                         largestSingleObgligation = currentTurn;
@@ -368,14 +367,14 @@ public class Game {
                 } else {
                     largestSingleObgligation = -1;
                 }
-                User current_player = players.get(currentTurn);
-                if (current_player.username() != null) {
-                    this.execute(new SendMessage(group.id(), String.format(this.translation.PASS_ANNOUNCEMENT_LINK(), current_player.username(), current_player.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                User currentPlayer = players.get(currentTurn);
+                if (currentPlayer.username() != null) {
+                    this.execute(new SendMessage(group.id(), String.format(this.translation.PASS_ANNOUNCEMENT_LINK(), currentPlayer.username(), currentPlayer.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
                 } else {
-                    this.execute(new SendMessage(group.id(), String.format(this.translation.PASS_ANNOUNCEMENT(), current_player.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                    this.execute(new SendMessage(group.id(), String.format(this.translation.PASS_ANNOUNCEMENT(), currentPlayer.firstName())).parseMode(ParseMode.HTML).disableWebPagePreview(true));
                 }
                 currentTurn = (currentTurn + 1) & 3;
-                start_turn();
+                startTurn();
             } else {
                 answer.showAlert(true).text(this.translation.PASS_ON_EMPTY());
             }
@@ -388,7 +387,7 @@ public class Game {
         Arrays.sort(hand);
         HandInfo info = new HandInfo(hand);
         if (info.compare(deskInfo) && info.type != HandType.NONE) {
-            Card[] current_deck = cards[currentTurn];
+            Card[] currentDeck = cards[currentTurn];
             // k hand valid, now remove cards from the player's deck and next turn
             // but check if the player is playing diamond 3 for the first turn
             if (firstRound) {
@@ -399,18 +398,18 @@ public class Game {
                 }
             }
             // we can cancel the job here cuz we no longer need auto pass for this round
-            cancel_future(); // cancel that auto pass job
+            cancelFuture(); // cancel that auto pass job
             firstRound = false;
             allPassed = false;
-            cancel_future();
+            cancelFuture();
             for (Card card : hand) {
-                current_deck[Arrays.binarySearch(current_deck, card)] = Card.ON99;
+                currentDeck[Arrays.binarySearch(currentDeck, card)] = Card.ON99;
                 Arrays.sort(cards[currentTurn]);
             }
-            String card_str = replace_all_suits(String.join(" ", currentProposal));
+            String cardStr = replaceAllSuits(String.join(" ", currentProposal));
             if (callbackQuery != null) {
                 autopassCount = 0;
-                this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), card_str), new EmptyCallback<>());
+                this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), cardStr), new EmptyCallback<>());
                 // lets update the game sequence
                 JsonArray array = gameSequence.getAsJsonArray("sequence");
                 if (array == null) {
@@ -426,37 +425,37 @@ public class Game {
                 array.add(turn);
                 gameSequence.add("sequence", array);
             }
-            User current_player = players.get(currentTurn);
-            if (current_player.username() != null) {
-                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), current_player.username(), current_player.firstName()) + card_str).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+            User currentPlayer = players.get(currentTurn);
+            if (currentPlayer.username() != null) {
+                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), currentPlayer.username(), currentPlayer.firstName()) + cardStr).parseMode(ParseMode.HTML).disableWebPagePreview(true));
             } else {
-                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT(), current_player.firstName()) + card_str).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT(), currentPlayer.firstName()) + cardStr).parseMode(ParseMode.HTML).disableWebPagePreview(true));
             }
-            if (current_deck.length == hand.length) {
+            if (currentDeck.length == hand.length) {
                 // player won
                 cards[currentTurn] = new Card[0];
                 end();
             } else {
                 // remove the placeholders from player deck
-                Card[] new_deck = new Card[cards[currentTurn].length - hand.length];
+                Card[] newDeck = new Card[cards[currentTurn].length - hand.length];
                 int i = 0;
                 int j = 0;
-                for (; i < new_deck.length; ) {
+                for (; i < newDeck.length; ) {
                     if (cards[currentTurn][j] != Card.ON99) {
-                        new_deck[i++] = cards[currentTurn][j];
+                        newDeck[i++] = cards[currentTurn][j];
                     }
                     j++;
                 }
-                cards[currentTurn] = new_deck;
+                cards[currentTurn] = newDeck;
                 Arrays.sort(cards[currentTurn]);
                 // check if the current played the largest possible hand, skip all if so
-                int current_max = 0;
+                int currentMax = 0;
                 for (int k = 0; k < 4; k++) {
-                    if (current_max < cards[k][cards[k].length - 1].ordinal()) {
-                        current_max = cards[k][cards[k].length - 1].ordinal();
+                    if (currentMax < cards[k][cards[k].length - 1].ordinal()) {
+                        currentMax = cards[k][cards[k].length - 1].ordinal();
                     }
                 }
-                if ((info.leading.ordinal() >= current_max) && (info.type == HandType.SINGLE || info.type == HandType.PAIR || info.type == HandType.TRIPLE)) {
+                if ((info.leading.ordinal() >= currentMax) && (info.type == HandType.SINGLE || info.type == HandType.PAIR || info.type == HandType.TRIPLE)) {
                     deskCards = new Card[0];
                     deskUser = null;
                     deskInfo = null;
@@ -469,7 +468,7 @@ public class Game {
                     deskInfo = info;
                     // check the large card obligation and remove it if they used their largest card
                     if (cards[(currentTurn + 1) & 3].length == 1 && info.type == HandType.SINGLE) {
-                        if (info.leading.ordinal() > new_deck[new_deck.length - 1].ordinal()) {
+                        if (info.leading.ordinal() > newDeck[newDeck.length - 1].ordinal()) {
                             largestSingleObgligation = -1;
                         } else {
                             largestSingleObgligation = currentTurn;
@@ -479,8 +478,8 @@ public class Game {
                     }
                     currentTurn = (currentTurn + 1) & 3;
                 }
-                update_deck(currentTurn);
-                start_turn();
+                updateDeck(currentTurn);
+                startTurn();
             }
         } else {
             // alert them for invalid hand or hand to small
@@ -497,32 +496,32 @@ public class Game {
         // notify the group
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(this.translation.WON_ANNOUNCEMENT(), players.get(currentTurn).id(), players.get(currentTurn).firstName()));
-        int[] deck_lengths = new int[]{cards[0].length, cards[1].length, cards[2].length, cards[3].length};
+        int[] deckLengths = new int[]{cards[0].length, cards[1].length, cards[2].length, cards[3].length};
         if (groupInfo.fry) {
-            for (int i = 0; i < deck_lengths.length; i++) {
-                switch (deck_lengths[i]) {
+            for (int i = 0; i < deckLengths.length; i++) {
+                switch (deckLengths[i]) {
                     case 13:
-                        deck_lengths[i] *= 4;
+                        deckLengths[i] *= 4;
                         break;
                     case 12:
                     case 11:
                     case 10:
-                        deck_lengths[i] *= 3;
+                        deckLengths[i] *= 3;
                         break;
                     case 9:
                     case 8:
-                        deck_lengths[i] *= 2;
+                        deckLengths[i] *= 2;
                         break;
                 }
             }
         }
-        int card_total = deck_lengths[0] + deck_lengths[1] + deck_lengths[2] + deck_lengths[3];
+        int cardTotal = deckLengths[0] + deckLengths[1] + deckLengths[2] + deckLengths[3];
         offsets = new int[4];
         for (int i = 0; i < 4; ++i) {
-            if (groupInfo.collect_place) {
-                offsets[i] = -4 * deck_lengths[i] + card_total;
+            if (groupInfo.collectPlace) {
+                offsets[i] = -4 * deckLengths[i] + cardTotal;
             } else {
-                offsets[i] = i == currentTurn ? chips * card_total : -chips * deck_lengths[i];
+                offsets[i] = i == currentTurn ? chips * cardTotal : -chips * deckLengths[i];
             }
         }
 //        this.log(largestSingleObgligation);
@@ -592,18 +591,18 @@ public class Game {
                 this.execute(new EditMessageReplyMarkup(players.get(i).id(), deckMsgid[i]));
             }
         }
-        cancel_future();
+        cancelFuture();
         // remove this game instance
         this.execute(new SendMessage(gid, this.translation.GAME_ENDED_ANNOUNCEMENT()), new EmptyCallback<>());
         for (int i = 0; i < playerCount(); i++) {
-            uid_games.remove(players.get(i).id());
+            uidGames.remove(players.get(i).id());
         }
         games.remove(gid);
         ended = true;
     }
 
     private void start() {
-        cancel_future();
+        cancelFuture();
         started = true;
         if (playerCount() < 4) {
             kill();
@@ -645,7 +644,7 @@ public class Game {
             order[i] = String.format("<a href=\"tg://user?id=%d\">%s</a>", players.get(i).id(), players.get(i).firstName());
         }
         cards[0][0] = Card.D3;
-        JsonArray starting_decks = new JsonArray();
+        JsonArray startingDecks = new JsonArray();
         int j = 0;
         for (Card[] deck : cards) {
             JsonObject current = new JsonObject();
@@ -656,12 +655,12 @@ public class Game {
                 _cards.add(card.toString());
             }
             current.add("deck", _cards);
-            starting_decks.add(current);
+            startingDecks.add(current);
         }
         for (int i = 0; i < 4; i++) {
             System.arraycopy(cards[i], 0, startingCards[i], 0, 13);
         }
-        gameSequence.add("starting_decks", starting_decks);
+        gameSequence.add("starting_decks", startingDecks);
         this.execute(new SendMessage(gid, String.join(" > ", order)).parseMode(ParseMode.HTML), new EmptyCallback<>());
         // pm players with their cards
         for (int i = 0; i < 4; i++) {
@@ -671,8 +670,8 @@ public class Game {
 //                sb.append(cards[i][j].name());
 //            }
             int finalI = i;
-            this.execute(new SendMessage(players.get(i).id(), this.translation.STARTING_DECK() + replace_all_suits(String.join(" ", cards[i]))), new EmptyCallback<>());
-            this.execute(new SendMessage(players.get(i).id(), this.translation.YOUR_DECK() + replace_all_suits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(i).id(), this.translation.STARTING_DECK() + replaceAllSuits(String.join(" ", cards[i]))), new EmptyCallback<>());
+            this.execute(new SendMessage(players.get(i).id(), this.translation.YOUR_DECK() + replaceAllSuits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     deckMsgid[finalI] = response.message().messageId();
@@ -685,10 +684,10 @@ public class Game {
             });
         }
         // ask first player to play
-        start_turn();
+        startTurn();
     }
 
-    private void start_turn() {
+    private void startTurn() {
         // ask the current player to play, while sending them the necessary info
         currentProposal = new ArrayList<>();
         if (deskUser == players.get(currentTurn)) {
@@ -699,11 +698,11 @@ public class Game {
         }
         // we check if the player actually enough number of cards to counter the last hand
 //        Game.this.log("starting turn " + currentTurn);
-        if (deskInfo != null && cards[currentTurn].length < deskInfo.card_count()) {
+        if (deskInfo != null && cards[currentTurn].length < deskInfo.cardCount()) {
             pass(new AnswerCallbackQuery("0"), null);
         } else {
             // prompt the player for cards
-            this.execute(new SendMessage(players.get(currentTurn).id(), this.translation.YOUR_TURN_PROMPT() + (allPassed || firstRound ? this.translation.THERE_IS_NOTHING() : (": " + replace_all_suits(String.join("  ", deskCards))))).replyMarkup(buttons_from_deck()), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(currentTurn).id(), this.translation.YOUR_TURN_PROMPT() + (allPassed || firstRound ? this.translation.THERE_IS_NOTHING() : (": " + replaceAllSuits(String.join("  ", deskCards))))).replyMarkup(buttonsFromDeck()), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     currentMsgid = response.message().messageId();
@@ -731,9 +730,9 @@ public class Game {
                 sb.append(this.translation.NOTHING_ON_DESK());
             } else {
                 if (deskUser.username() != null) {
-                    sb.append(String.format(this.translation.ON_DESK_LINK(), replace_all_suits(String.join("  ", deskCards)), deskUser.username(), deskUser.firstName()));
+                    sb.append(String.format(this.translation.ON_DESK_LINK(), replaceAllSuits(String.join("  ", deskCards)), deskUser.username(), deskUser.firstName()));
                 } else {
-                    sb.append(String.format(this.translation.ON_DESK(), replace_all_suits(String.join("  ", deskCards)), deskUser.firstName()));
+                    sb.append(String.format(this.translation.ON_DESK(), replaceAllSuits(String.join("  ", deskCards)), deskUser.firstName()));
                 }
             }
             sb.append(String.format(this.translation.YOUR_TURN_ANNOUNCEMENT(), players.get(currentTurn).id(), players.get(currentTurn).firstName(), turnWait));
@@ -745,21 +744,7 @@ public class Game {
         }
     }
 
-    private Card[] map_to_card(String[] _proposed_cards) {
-//        String[] _proposed_cards = in.split("_");
-        List<Card> _proposed = new ArrayList<>();
-        for (String _proposed_card : _proposed_cards) {
-            try {
-                _proposed.add(Card.valueOf(_proposed_card));
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        Card[] proposed = _proposed.toArray(new Card[0]);
-        Arrays.sort(proposed);
-        return proposed;
-    }
-
-    private InlineKeyboardMarkup buttons_from_deck() {
+    private InlineKeyboardMarkup buttonsFromDeck() {
         Card[] deck = cards[currentTurn];
         int rows = 3 + deck.length / 4;
         InlineKeyboardButton[][] buttons = new InlineKeyboardButton[rows][0];
@@ -768,22 +753,22 @@ public class Game {
             for (int j = 4 * i; j < Math.min(4 * i + 4, deck.length); ++j) {
                 boolean chosen = currentProposal.contains(deck[j]);
 //                logf("contains %s: %s", deck[j], chosen);
-                buttons[i][j - 4 * i] = new InlineKeyboardButton(replace_all_suits((chosen ? "\u2705 " : "") + deck[j].name())).callbackData("propose:" + deck[j]);
+                buttons[i][j - 4 * i] = new InlineKeyboardButton(replaceAllSuits((chosen ? "\u2705 " : "") + deck[j].name())).callbackData("propose:" + deck[j]);
             }
         }
-        String btn_play;
+        String btnPlay;
         if (currentProposal.size() == 0) {
-            btn_play = this.translation.CHOOSE_SOME_CARDS();
+            btnPlay = this.translation.CHOOSE_SOME_CARDS();
         } else {
             HandInfo info = new HandInfo(currentProposal.toArray(new Card[0]));
-            btn_play = this.translation.HAND_TYPE(info.type) + replace_all_suits(String.join(" ", currentProposal));
+            btnPlay = this.translation.HAND_TYPE(info.type) + replaceAllSuits(String.join(" ", currentProposal));
         }
-        buttons[rows - 2] = new InlineKeyboardButton[]{new InlineKeyboardButton(btn_play).callbackData("play:" + currentProposal)};
+        buttons[rows - 2] = new InlineKeyboardButton[]{new InlineKeyboardButton(btnPlay).callbackData("play:" + currentProposal)};
         buttons[rows - 1] = new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.PASS()).callbackData("pass")};
         return new InlineKeyboardMarkup(buttons);
     }
 
-    private String replace_all_suits(String in) {
+    private String replaceAllSuits(String in) {
         return in.replaceAll("D", " \u2666\ufe0f ").replaceAll("C", " \u2663\ufe0f ").replaceAll("H", " \u2764\ufe0f ").replaceAll("S", " \u2660\ufe0f ").trim();
     }
 
@@ -793,19 +778,19 @@ public class Game {
         this.execute(new SendMessage(gid, String.format(this.translation.JOIN_PROMPT(), Math.round(seconds / 15.0) * 15)));
         int i;
         i = 0;
-        while (remind_seconds[i] < seconds) {
+        while (remindSeconds[i] < seconds) {
             ++i;
         }
         if (i > 0) {
 //            this.log("scheduled remind task");
-            schedule(this::remind, startTime - System.currentTimeMillis() - remind_seconds[--i] * 1000);
+            schedule(this::remind, startTime - System.currentTimeMillis() - remindSeconds[--i] * 1000);
         } else {
 //            this.log(String.format("scheduled kill task after %d seconds", seconds));
             schedule(this::kill, startTime - System.currentTimeMillis());
         }
     }
 
-    private void cancel_future() {
+    private void cancelFuture() {
         if (future != null && !future.isDone() && !future.isCancelled()) {
 //            this.log("cancelled task");
             future.cancel(true);
@@ -819,7 +804,7 @@ public class Game {
     }
 
     private void schedule(Runnable runnable, long l) {
-        cancel_future();
+        cancelFuture();
         future = executor.schedule(runnable, l, TimeUnit.MILLISECONDS);
     }
 
@@ -871,7 +856,7 @@ public class Game {
         this.execute(request, callback, 0);
     }
 
-    private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback, int fail_count) {
+    private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback, int failCount) {
         bot.execute(request, new Callback<T, R>() {
             @Override
             public void onResponse(T request, R response) {
@@ -886,13 +871,13 @@ public class Game {
                     callback.onFailure(request, e);
                 }
                 Game.this.logf("HTTP Error: %s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
-                if (fail_count < 5) { // linear backoff, max 5 retries
+                if (failCount < 5) { // linear backoff, max 5 retries
                     new Thread(() -> {
                         try {
-                            Thread.sleep(5000 * fail_count + 5000);
+                            Thread.sleep(5000 * failCount + 5000);
                         } catch (InterruptedException ignored) {
                         }
-                        Game.this.execute(request, callback, fail_count + 1);
+                        Game.this.execute(request, callback, failCount + 1);
                     }).start();
                 }
             }
@@ -946,19 +931,6 @@ public class Game {
         }
 
 
-        int card_count() {
-            switch (type) {
-                case TRIPLE:
-                    return 3;
-                case PAIR:
-                    return 2;
-                case SINGLE:
-                    return 1;
-                default:
-                    return 5;
-            }
-        }
-
         HandInfo(Card[] _cards) {
             Card[] cards = Arrays.copyOf(_cards, _cards.length);
             Arrays.sort(cards);
@@ -987,7 +959,7 @@ public class Game {
                     break;
                 case 5:
                     // straight flush
-                    if (is_flush(cards) && is_straight(cards)) {
+                    if (isFlush(cards) && isStraight(cards)) {
                         type = HandType.STRAIGHT_FLUSH;
                         leading = cards[4];
                         break;
@@ -1019,13 +991,13 @@ public class Game {
                         }
                     }
                     // flush
-                    if (is_flush(cards)) {
+                    if (isFlush(cards)) {
                         type = HandType.FLUSH;
                         leading = cards[4];
                         break;
                     }
                     // straight
-                    if (is_straight(cards)) {
+                    if (isStraight(cards)) {
                         type = HandType.STRAIGHT;
                         leading = cards[4];
                         break;
@@ -1037,6 +1009,15 @@ public class Game {
                     type = HandType.NONE;
                     leading = null;
             }
+        }
+
+        private static boolean isFlush(Card[] cards) {
+            for (int i = 1; i < cards.length; ++i) {
+                if (cards[i].getSuit() != cards[i - 1].getSuit()) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private boolean compare(HandInfo other) {
@@ -1065,16 +1046,7 @@ public class Game {
             }
         }
 
-        private static boolean is_flush(Card[] cards) {
-            for (int i = 1; i < cards.length; ++i) {
-                if (cards[i].getSuit() != cards[i - 1].getSuit()) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private static boolean is_straight(Card[] cards) {
+        private static boolean isStraight(Card[] cards) {
             // 3 4 5 6 7, ... , 10 J Q K A
             // A 2 3 4 5, 2 3 4 5 6
             // 3 4 5 A 2, 3 4 5 6 2
@@ -1092,17 +1064,30 @@ public class Game {
             //                Game.this.logf("%s %s %s %s %s false\n", cards[0], cards[1], cards[2], cards[3], cards[4]);
             return cards[2].getFace() != 10;
         }
+
+        int cardCount() {
+            switch (type) {
+                case TRIPLE:
+                    return 3;
+                case PAIR:
+                    return 2;
+                case SINGLE:
+                    return 1;
+                default:
+                    return 5;
+            }
+        }
     }
 
     public static class RunInfo {
-        public final int running_count;
-        public final int game_count;
-        public final int player_count;
+        public final int runningCount;
+        public final int gameCount;
+        public final int playerCount;
 
-        RunInfo(int running_count, int game_count, int player_count) {
-            this.running_count = running_count;
-            this.game_count = game_count;
-            this.player_count = player_count;
+        RunInfo(int runningCount, int gameCount, int playerCount) {
+            this.runningCount = runningCount;
+            this.gameCount = gameCount;
+            this.playerCount = playerCount;
         }
     }
 

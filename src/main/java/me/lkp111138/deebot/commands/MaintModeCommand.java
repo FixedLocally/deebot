@@ -10,8 +10,8 @@ public class MaintModeCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         if (msg.from().id() == Main.BOT_OWNER) {
-            Game.maint_mode = !Game.maint_mode;
-            bot.execute(new SendMessage(Main.BOT_OWNER, "Maintenance mode: " + Game.maint_mode));
+            Game.maintMode = !Game.maintMode;
+            bot.execute(new SendMessage(Main.BOT_OWNER, "Maintenance mode: " + Game.maintMode));
         }
     }
 }
