@@ -320,4 +320,8 @@ public class TraditionalChinese extends Translation {
                 throw new IllegalStateException("Unexpected value: " + type);
         }
     }
+
+    public String GAME_ENDED_ERROR() {
+        return "發生錯誤！遊戲提前結束！";
+    }
 }

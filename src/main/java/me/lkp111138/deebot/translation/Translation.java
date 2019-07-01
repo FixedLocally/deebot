@@ -285,4 +285,8 @@ public class Translation {
                 throw new IllegalStateException("Unexpected value: " + type);
         }
     }
+
+    public String GAME_ENDED_ERROR() {
+        return "An error occurred! The game is killed!";
+    }
 }

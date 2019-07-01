@@ -582,11 +582,15 @@ public class Game {
         }
     }
 
-    public void kill() {
+    private void kill(boolean isError) {
         this.log("Game ended");
         if (started) {
             // the game is forcibly killed, kill aht buttons of the current player too
-            this.execute(new EditMessageText(players.get(currentTurn).id(), currentMsgid, this.translation.GAME_ENDED()));
+            if (isError) {
+                this.execute(new EditMessageText(players.get(currentTurn).id(), currentMsgid, this.translation.GAME_ENDED_ERROR()));
+            } else {
+                this.execute(new EditMessageText(players.get(currentTurn).id(), currentMsgid, this.translation.GAME_ENDED()));
+            }
             for (int i = 0; i < 4; ++i) {
                 this.execute(new EditMessageReplyMarkup(players.get(i).id(), deckMsgid[i]));
             }
@@ -599,6 +603,10 @@ public class Game {
         }
         games.remove(gid);
         ended = true;
+    }
+
+    public void kill() {
+        kill(false);
     }
 
     private void start() {
@@ -879,6 +887,8 @@ public class Game {
                         }
                         Game.this.execute(request, callback, failCount + 1);
                     }).start();
+                } else {
+                    Game.this.kill();
                 }
             }
         });
