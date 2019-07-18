@@ -77,7 +77,7 @@ public class DeeBot {
             while (rs.next()) {
                 long tgid = rs.getLong(1);
                 Ban oldBan = bans.get(tgid);
-                Ban ban = new Ban(rs.getInt(1), rs.getInt(2), rs.getString(3));
+                Ban ban = new Ban(rs.getLong(1), rs.getInt(2), rs.getString(3));
                 if (oldBan == null || oldBan.expiry < ban.expiry) {
                     bans.put(tgid, ban);
                 }
@@ -112,7 +112,7 @@ public class DeeBot {
                     e.printStackTrace();
                 }
             }
-            if (msg.leftChatMember().id().toString().equals(Main.getConfig("bot.uid"))) {
+            if (msg.leftChatMember() != null && msg.leftChatMember().id().toString().equals(Main.getConfig("bot.uid"))) {
                 System.out.printf("was kicked in group %s [%s], 10min ban applied\n", msg.chat().id(), msg.chat().title());
                 // is kicked, ban for 10mins
                 executeBan(msg.chat().id(), "COMMAND", 600, "kick autoban");
@@ -234,6 +234,15 @@ public class DeeBot {
             this.tgid = tgid;
             this.expiry = expiry;
             this.type = type;
+        }
+
+        @Override
+        public String toString() {
+            return "Ban{" +
+                    "tgid=" + tgid +
+                    ", expiry=" + expiry +
+                    ", type='" + type + '\'' +
+                    '}';
         }
     }
 }
