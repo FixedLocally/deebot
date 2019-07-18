@@ -23,7 +23,7 @@ public class DeeBot {
     private final TelegramBot bot;
 
     private static Map<Long, String> group_lang = new HashMap<>();
-    private static Map<Integer, Ban> bans = new HashMap<>();
+    private static Map<Long, Ban> bans = new HashMap<>();
 
     DeeBot(TelegramBot bot) {
         this.bot = bot;
@@ -71,12 +71,11 @@ public class DeeBot {
         Achievement.registerAchievement(new DeepFriedAchievement());
 
         // bans
-        try {
-            PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT tgid, until, type from bans WHERE until>?");
+        try (PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT tgid, until, type from bans WHERE until>?")) {
             stmt.setInt(1, (int) (System.currentTimeMillis() / 1000));
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                int tgid = rs.getInt(1);
+                long tgid = rs.getLong(1);
                 Ban oldBan = bans.get(tgid);
                 Ban ban = new Ban(rs.getInt(1), rs.getInt(2), rs.getString(3));
                 if (oldBan == null || oldBan.expiry < ban.expiry) {
@@ -99,6 +98,9 @@ public class DeeBot {
             if ("COMMAND".equals(queryBan(sender))) {
                 return;
             }
+            if ("COMMAND".equals(queryBan(msg.chat().id()))) {
+                return;
+            }
             if (msg.migrateFromChatId() != null) {
                 // migrate settings if any
                 try (Connection conn = Main.getConnection()) {
@@ -108,6 +110,16 @@ public class DeeBot {
                     stmt.execute();
                 } catch (SQLException e) {
                     e.printStackTrace();
+                }
+            }
+            if (msg.leftChatMember().id().toString().equals(Main.getConfig("bot.uid"))) {
+                System.out.printf("was kicked in group %s [%s], 10min ban applied\n", msg.chat().id(), msg.chat().title());
+                // is kicked, ban for 10mins
+                executeBan(msg.chat().id(), "COMMAND", 600, "kick autoban");
+                // kill existing game
+                Game g = Game.byGroup(msg.chat().id());
+                if (g != null) {
+                    g.kill();
                 }
             }
             if (entities != null && entities.length > 0 && entities[0].type().equals(MessageEntity.Type.bot_command)) {
@@ -125,6 +137,7 @@ public class DeeBot {
                     e.printStackTrace();
                 }
             }
+            return;
         }
         if (query != null) {
             Game g = Game.byUser(query.from().id());
@@ -143,7 +156,10 @@ public class DeeBot {
             if (SetLangCommand.callback(bot, query)) {
                 return;
             }
+            System.out.println("unknown query: " + query.data());
+            return;
         }
+        System.out.println("unknown update: " + update.toString());
     }
 
     public static String lang(long gid) {
@@ -175,7 +191,12 @@ public class DeeBot {
         }
     }
 
-    public static String queryBan(int tgid) {
+    /**
+     * Query user or group ban status
+     * @param tgid the id to be ueried
+     * @return the type of ban, or null if none
+     */
+    public static String queryBan(long tgid) {
         Ban ban = bans.get(tgid);
         if (ban == null) {
             return null;
@@ -183,12 +204,33 @@ public class DeeBot {
         return ban.type;
     }
 
+    public static void executeBan(long tgid, String type, int length, String reason) {
+        try (Connection conn = Main.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("INSERT into bans (tgid, until, count, type, reason) VALUES (?, ?, ?, ?, ?)");
+            int expiry = (int) (System.currentTimeMillis() / 1000) + length;
+            stmt.setLong(1, tgid);
+            stmt.setInt(2, expiry);
+            stmt.setInt(3, 0);
+            stmt.setString(4, type);
+            stmt.setString(5, reason);
+            stmt.execute();
+            stmt.close();
+            Ban ban = new Ban(tgid, expiry, type);
+            Ban oldBan = bans.get(tgid);
+            if (oldBan != null && oldBan.expiry < ban.expiry) {
+                bans.put(tgid, ban);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static class Ban {
-        final int tgid;
+        final long tgid;
         final int expiry;
         final String type;
 
-        private Ban(int tgid, int expiry, String type) {
+        private Ban(long tgid, int expiry, String type) {
             this.tgid = tgid;
             this.expiry = expiry;
             this.type = type;
