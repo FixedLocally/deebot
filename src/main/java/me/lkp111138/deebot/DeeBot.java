@@ -23,6 +23,7 @@ public class DeeBot {
     private final TelegramBot bot;
 
     private static Map<Long, String> group_lang = new HashMap<>();
+    private static Map<Integer, Ban> bans = new HashMap<>();
 
     DeeBot(TelegramBot bot) {
         this.bot = bot;
@@ -68,6 +69,23 @@ public class DeeBot {
         Achievement.registerAchievement(new ExpertAchievement());
         Achievement.registerAchievement(new LoseItAllAchievement());
         Achievement.registerAchievement(new DeepFriedAchievement());
+
+        // bans
+        try {
+            PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT tgid, until, type from bans WHERE until>?");
+            stmt.setInt(1, (int) (System.currentTimeMillis() / 1000));
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                int tgid = rs.getInt(1);
+                Ban oldBan = bans.get(tgid);
+                Ban ban = new Ban(rs.getInt(1), rs.getInt(2), rs.getString(3));
+                if (oldBan == null || oldBan.expiry < ban.expiry) {
+                    bans.put(tgid, ban);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void processUpdate(Update update) {
@@ -78,13 +96,8 @@ public class DeeBot {
             MessageEntity[] entities = msg.entities();
             int sender = msg.from().id();
             // blacklist
-            switch (sender) {
-                case 290485640:
-                case 654217056:
-                case 665228326:
-                case 246596279:
-                case 37622951:
-                    return;
+            if ("COMMAND".equals(queryBan(sender))) {
+                return;
             }
             if (msg.migrateFromChatId() != null) {
                 // migrate settings if any
@@ -159,6 +172,26 @@ public class DeeBot {
             group_lang.put(gid, lang);
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static String queryBan(int tgid) {
+        Ban ban = bans.get(tgid);
+        if (ban == null) {
+            return null;
+        }
+        return ban.type;
+    }
+
+    private static class Ban {
+        final int tgid;
+        final int expiry;
+        final String type;
+
+        private Ban(int tgid, int expiry, String type) {
+            this.tgid = tgid;
+            this.expiry = expiry;
+            this.type = type;
         }
     }
 }

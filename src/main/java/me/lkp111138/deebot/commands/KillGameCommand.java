@@ -6,6 +6,7 @@ import com.pengrad.telegrambot.model.ChatMember;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.request.GetChatMember;
 import com.pengrad.telegrambot.response.GetChatMemberResponse;
+import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
 import me.lkp111138.deebot.game.Game;
 
@@ -19,17 +20,14 @@ public class KillGameCommand implements Command {
             case channel:
                 return;
         }
-        // blacklist
-        //            case 401742123:
-        //                break;
         // whitelist
-        switch (msg.from().id()) {
-            case 321989382:
-                return;
-            case Main.BOT_OWNER:
-                if (Game.byGroup(msg.chat().id()) != null) {
-                    Game.byGroup(msg.chat().id()).kill();
-                }
+        if (msg.from().id() == Main.BOT_OWNER) {
+            if (Game.byGroup(msg.chat().id()) != null) {
+                Game.byGroup(msg.chat().id()).kill();
+            }
+        }
+        if (DeeBot.queryBan(msg.from().id()) != null) {
+            return;
         }
         bot.execute(new GetChatMember(msg.chat().id(), msg.from().id()), new Callback<GetChatMember, GetChatMemberResponse>() {
             @Override
