@@ -14,7 +14,9 @@ This bot provides its implementation of the Big 2 (dee) card game. You may find 
 /extend - Extend the recruiting period.
 #### Group admin only commands
 /config - Changes game configuration, opens in PM.<br>
-/setlang - Changes game language.
+/setlang - Changes game language.<br>
+/forcestart - Forcibly starts the game, that is, end it if it's not started yet.<br>
+/fs - Alias of /forcestart.<br>
 #### Technical
 /runinfo - Displays some info.<br>
 /ping - Unknown command.

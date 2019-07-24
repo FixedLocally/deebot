@@ -55,6 +55,8 @@ public class DeeBot {
         commands.put("feedback", new FeedbackCommand());
         commands.put("achv", new AchvCommand());
         commands.put("toggle69", new Toggle69Command());
+        commands.put("forcestart", new ForceStartCommand());
+        commands.put("fs", commands.get("forcestart"));
 
         // achievements
         Achievement.registerAchievement(new FirstGameAchievement());

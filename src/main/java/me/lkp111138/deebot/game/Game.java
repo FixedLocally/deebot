@@ -888,7 +888,7 @@ public class Game {
                         Game.this.execute(request, callback, failCount + 1);
                     }).start();
                 } else {
-                    Game.this.kill();
+                    Game.this.kill(true);
                 }
             }
         });
