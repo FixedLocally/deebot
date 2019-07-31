@@ -2,10 +2,8 @@ package me.lkp111138.deebot;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
-import com.pengrad.telegrambot.model.CallbackQuery;
-import com.pengrad.telegrambot.model.Message;
-import com.pengrad.telegrambot.model.MessageEntity;
-import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.model.*;
+import com.pengrad.telegrambot.request.AnswerPreCheckoutQuery;
 import me.lkp111138.deebot.commands.*;
 import me.lkp111138.deebot.game.Game;
 import me.lkp111138.deebot.game.achievement.*;
@@ -57,6 +55,7 @@ public class DeeBot {
         commands.put("toggle69", new Toggle69Command());
         commands.put("forcestart", new ForceStartCommand());
         commands.put("fs", commands.get("forcestart"));
+        commands.put("donate", new DonateCommand());
 
         // achievements
         Achievement.registerAchievement(new FirstGameAchievement());
@@ -93,6 +92,7 @@ public class DeeBot {
         // get update type
         Message msg = update.message();
         CallbackQuery query = update.callbackQuery();
+        PreCheckoutQuery preCheckoutQuery = update.preCheckoutQuery();
         if (msg != null) {
             MessageEntity[] entities = msg.entities();
             int sender = msg.from().id();
@@ -159,6 +159,10 @@ public class DeeBot {
                 return;
             }
             System.out.println("unknown query: " + query.data());
+            return;
+        }
+        if (preCheckoutQuery != null) {
+            bot.execute(new AnswerPreCheckoutQuery(preCheckoutQuery.id()));
             return;
         }
         System.out.println("unknown update: " + update.toString());
