@@ -252,11 +252,10 @@ public class Translation {
     }
 
     public String JOIN_69_PROTEST() {
-        return "No evidence is needed to extradite any given HK citizen.\n" +
-                "HongKongers, let's defend the last line of defense to our judicial system.\n" +
-                "Stop the next Lee Bo incident.\n" +
-                "Stop HK citizens from ever being the next Li Wang Yang.\n" +
-                "Jun 11 - See you there.\n" +
+        return "Hong Kong's situation is becoming worse - the police is out of control, " +
+                "and government is refusing to address the issue.\n" +
+                "Please tweet #StandWithHongKong to raise international awareness about my home.\n" +
+                "Thank you." +
                 "Use /toggle69 to turn this message off.";
     }
 

@@ -285,14 +285,11 @@ public class HongKongChinese extends Translation {
 
     @Override
     public String JOIN_69_PROTEST() {
-        return "#懶人包 \n" +
-                "引渡你 唔需要證據 哪怕你乜都冇做過\n" +
-                "香港人 一齊守住我哋司法嘅防線 唔好俾惡法通過\n" +
-                "唔好再俾香港出現下一個李波\n" +
-                "唔好俾機會香港人成為下一個李旺陽\n" +
-                "6月11日晚 #不散\n" +
-                "#反惡法 #反送中 #香港人撐香港" +
-                "用 /toggle69 嚟停止出呢段訊息。";
+        return "香港嘅情況日益嚴峻 - 警察肆意攻擊同拘捕市民，" +
+                "而政府一直拒絕回應五大訴求。\n" +
+                "請幫手去各大社交平台分享 #StandWithHongKong 嚟喚起國際關注。\n" +
+                "唔該曬你。" +
+                "打 /toggle69 唔再顯示呢個訊息";
     }
 
     @Override
