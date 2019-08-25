@@ -160,7 +160,7 @@ public class Game {
                 ++running;
             }
         }
-        return new RunInfo(running, total, players);
+        return new RunInfo(running, total, players, games);
     }
 
     public void addPlayer(Message msg) {
@@ -220,6 +220,10 @@ public class Game {
             return uidGames.remove(tgid) != null;
         }
         return false;
+    }
+
+    public List<User> getPlayers() {
+        return players;
     }
 
     public int playerCount() {
@@ -300,7 +304,7 @@ public class Game {
                 }
                 if (args.length > 1) {
                     Card[] hand = currentProposal.toArray(new Card[0]);
-                    play(hand, answer, callbackQuery, args);
+                    play(hand, answer, callbackQuery);
                     updateDeck(i);
                 }
                 processed = true;
@@ -399,7 +403,7 @@ public class Game {
         }
     }
 
-    private void play(Card[] hand, AnswerCallbackQuery answer, CallbackQuery callbackQuery, String[] args) {
+    private void play(Card[] hand, AnswerCallbackQuery answer, CallbackQuery callbackQuery) {
         Arrays.sort(hand);
         HandInfo info = new HandInfo(hand);
         if (info.compare(deskInfo) && info.type != HandType.NONE) {
@@ -843,11 +847,11 @@ public class Game {
         this.execute(new EditMessageText(players.get(currentTurn).id(), currentMsgid, this.translation.TIMES_UP()));
         if (autopassCount < 8) {
             if (firstRound) {
-                play(new Cards.Card[]{Cards.Card.D3}, new AnswerCallbackQuery("0"), null, new String[]{"play", "D3"});
+                play(new Cards.Card[]{Cards.Card.D3}, new AnswerCallbackQuery("0"), null);
             } else {
                 if (allPassed) {
                     // play the smallest single
-                    play(new Cards.Card[]{cards[currentTurn][0]}, new AnswerCallbackQuery("0"), null, new String[]{"play", cards[currentTurn][0].toString()});
+                    play(new Cards.Card[]{cards[currentTurn][0]}, new AnswerCallbackQuery("0"), null);
                 } else {
                     pass(new AnswerCallbackQuery("0"), null);
                 }
@@ -1109,11 +1113,13 @@ public class Game {
         public final int runningCount;
         public final int gameCount;
         public final int playerCount;
+        public final Map<Long, Game> games;
 
-        RunInfo(int runningCount, int gameCount, int playerCount) {
+        RunInfo(int runningCount, int gameCount, int playerCount, Map<Long, Game> games) {
             this.runningCount = runningCount;
             this.gameCount = gameCount;
             this.playerCount = playerCount;
+            this.games = games;
         }
     }
 
