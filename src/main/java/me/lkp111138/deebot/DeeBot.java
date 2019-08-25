@@ -56,6 +56,7 @@ public class DeeBot {
         commands.put("forcestart", new ForceStartCommand());
         commands.put("fs", commands.get("forcestart"));
         commands.put("donate", new DonateCommand());
+        commands.put("nextgame", new NextGameCommand());
 
         // achievements
         Achievement.registerAchievement(new FirstGameAchievement());
