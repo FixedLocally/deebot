@@ -289,4 +289,12 @@ public class Translation {
     public String GAME_ENDED_ERROR() {
         return "An error occurred! The game is killed!";
     }
+
+    public String NEXT_GAME_QUEUED(String name) {
+        return String.format("You will be notified when a game is about to start in %s", name);
+    }
+
+    public String GAME_STARTING_IN(String name) {
+        return String.format("A game is about to start in %s", name);
+    }
 }

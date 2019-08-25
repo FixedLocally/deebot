@@ -98,6 +98,7 @@ public class Game {
             this.execute(new SendMessage(gid, this.translation.MAINT_MODE_NOTICE()).parseMode(ParseMode.HTML), new EmptyCallback<>());
             return;
         }
+        // create game
         try (Connection conn = Main.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement("INSERT INTO games (gid, chips) values (?, ?)", Statement.RETURN_GENERATED_KEYS);
             stmt.setLong(1, gid);
@@ -110,6 +111,21 @@ public class Game {
                 else {
                     throw new SQLException("Creating game failed, no ID obtained.");
                 }
+            }
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            this.execute(new SendMessage(msg.chat().id(), this.translation.ERROR() + e.getMessage()).replyToMessageId(msg.messageId()));
+        }
+        // notify queued users
+        try (Connection conn = Main.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("SELECT tgid FROM next_game where gid=?");
+            stmt.setLong(1, gid);
+            ResultSet rs = stmt.executeQuery();
+            String startMsg = this.translation.GAME_STARTING_IN(msg.chat().title());
+            while (rs.next()) {
+                SendMessage send = new SendMessage(rs.getInt(1), startMsg);
+                this.execute(send);
             }
             stmt.close();
         } catch (SQLException e) {

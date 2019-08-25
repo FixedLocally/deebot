@@ -295,6 +295,7 @@ public class TraditionalChinese extends Translation {
                 "用 /toggle69 嚟停止出呢段訊息。";
     }
 
+    @Override
     public String HAND_TYPE(Game.HandType type) {
         switch (type) {
             case NONE:
@@ -321,7 +322,18 @@ public class TraditionalChinese extends Translation {
         }
     }
 
+    @Override
     public String GAME_ENDED_ERROR() {
         return "發生錯誤！遊戲提前結束！";
+    }
+
+    @Override
+    public String NEXT_GAME_QUEUED(String name) {
+        return String.format("當遊戲喺 %s 度開始嗰陣，我會通知你", name);
+    }
+
+    @Override
+    public String GAME_STARTING_IN(String name) {
+        return String.format("遊戲即將於 %s 開始", name);
     }
 }
