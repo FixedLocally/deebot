@@ -2,6 +2,8 @@ package me.lkp111138.deebot.commands;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Message;
+import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
+import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
@@ -20,6 +22,10 @@ public class NextGameCommand implements Command {
             stmt.setLong(2, gid);
             stmt.execute();
             SendMessage send = new SendMessage(uid, Translation.get(DeeBot.lang(gid)).NEXT_GAME_QUEUED(msg.chat().title()));
+            // add a cancel button
+            InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup(
+                    new InlineKeyboardButton[]{new InlineKeyboardButton(Translation.get(DeeBot.lang(gid)).CANCEL()).callbackData("cancel:" + gid)}
+            );
             bot.execute(send);
         } catch (SQLException e) {
             e.printStackTrace();

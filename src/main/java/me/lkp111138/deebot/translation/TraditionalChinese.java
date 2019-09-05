@@ -333,4 +333,9 @@ public class TraditionalChinese extends Translation {
     public String GAME_STARTING_IN(String name) {
         return String.format("遊戲即將於 %s 開始", name);
     }
+
+    @Override
+    public String CANCEL() {
+        return "取消";
+    }
 }

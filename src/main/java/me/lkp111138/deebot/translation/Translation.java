@@ -296,4 +296,8 @@ public class Translation {
     public String GAME_STARTING_IN(String name) {
         return String.format("A game is about to start in %s", name);
     }
+
+    public String CANCEL() {
+        return "Cancel";
+    }
 }
