@@ -159,6 +159,9 @@ public class DeeBot {
             if (SetLangCommand.callback(bot, query)) {
                 return;
             }
+            if (NextGameCommand.callback(bot, query)) {
+                return;
+            }
             System.out.println("unknown query: " + query.data());
             return;
         }

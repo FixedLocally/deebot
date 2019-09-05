@@ -1,14 +1,18 @@
 package me.lkp111138.deebot.commands;
 
 import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.model.CallbackQuery;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
+import com.pengrad.telegrambot.request.AnswerCallbackQuery;
+import com.pengrad.telegrambot.request.DeleteMessage;
 import com.pengrad.telegrambot.request.SendMessage;
 import me.lkp111138.deebot.DeeBot;
 import me.lkp111138.deebot.Main;
 import me.lkp111138.deebot.translation.Translation;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -30,5 +34,28 @@ public class NextGameCommand implements Command {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public static boolean callback(TelegramBot bot, CallbackQuery query) {
+        int tgid = query.from().id();
+        int mid = query.message().messageId();
+        String payload = query.data();
+        String[] args = payload.split(":");
+        AnswerCallbackQuery answer = new AnswerCallbackQuery(query.id());
+        if ("cancel".equals(args[0])) {
+            long gid = Long.parseLong(args[1]);
+            try (Connection conn = Main.getConnection()) {
+                PreparedStatement stmt = conn.prepareStatement("delete from next_game where tgid=? and gid=?");
+                stmt.setInt(1, tgid);
+                stmt.setLong(2, gid);
+                stmt.executeUpdate();
+                bot.execute(answer);
+                bot.execute(new DeleteMessage(tgid, mid));
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        return false;
     }
 }
