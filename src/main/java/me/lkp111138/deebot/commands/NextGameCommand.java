@@ -30,6 +30,7 @@ public class NextGameCommand implements Command {
             InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup(
                     new InlineKeyboardButton[]{new InlineKeyboardButton(Translation.get(DeeBot.lang(gid)).CANCEL()).callbackData("cancel:" + gid)}
             );
+            send.replyMarkup(keyboard);
             bot.execute(send);
         } catch (SQLException e) {
             e.printStackTrace();
