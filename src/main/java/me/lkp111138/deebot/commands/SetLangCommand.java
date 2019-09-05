@@ -82,8 +82,6 @@ public class SetLangCommand implements Command {
             bot.execute(answer);
             return true;
         }
-        answer.text("what?");
-        bot.execute(answer);
         return false;
     }
 }

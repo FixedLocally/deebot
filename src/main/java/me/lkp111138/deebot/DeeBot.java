@@ -3,6 +3,7 @@ package me.lkp111138.deebot;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.*;
+import com.pengrad.telegrambot.request.AnswerCallbackQuery;
 import com.pengrad.telegrambot.request.AnswerPreCheckoutQuery;
 import me.lkp111138.deebot.commands.*;
 import me.lkp111138.deebot.game.Game;
@@ -163,6 +164,7 @@ public class DeeBot {
                 return;
             }
             System.out.println("unknown query: " + query.data());
+            bot.execute(new AnswerCallbackQuery(query.id()));
             return;
         }
         if (preCheckoutQuery != null) {
