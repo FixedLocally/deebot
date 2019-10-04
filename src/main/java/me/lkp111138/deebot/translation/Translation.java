@@ -259,6 +259,10 @@ public class Translation {
                 "Use /toggle69 to turn this message off.";
     }
 
+    public String OCT_5_STRIKE() {
+        return "\n\nThis bot has suspended its service today.";
+    }
+
     public String HAND_TYPE(Game.HandType type) {
         switch (type) {
             case NONE:

@@ -293,6 +293,11 @@ public class TraditionalChinese extends Translation {
     }
 
     @Override
+    public String OCT_5_STRIKE() {
+        return "\n\n本 bot 今日暫停服務。";
+    }
+
+    @Override
     public String HAND_TYPE(Game.HandType type) {
         switch (type) {
             case NONE:
