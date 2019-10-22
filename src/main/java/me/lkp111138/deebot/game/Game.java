@@ -507,7 +507,8 @@ public class Game {
                     currentTurn = (currentTurn + 1) & 3;
                 }
                 updateDeck(currentTurn);
-                startTurn();
+                // wait a bit before starting the next turn
+                executor.schedule(this::startTurn, 500, TimeUnit.MILLISECONDS);
             }
         } else {
             // alert them for invalid hand or hand to small
