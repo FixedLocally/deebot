@@ -59,6 +59,8 @@ public class Game {
     private me.lkp111138.deebot.translation.Translation translation;
     private JsonObject gameSequence = new JsonObject();
     private int id;
+    private String broadcastMessageCache = "";
+    private ScheduledFuture sendMessageFuture;
 
     private boolean ended = false;
     private int[] offsets;
@@ -891,33 +893,57 @@ public class Game {
     }
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback, int failCount) {
-        bot.execute(request, new Callback<T, R>() {
-            @Override
-            public void onResponse(T request, R response) {
-                if (callback != null) {
-                    callback.onResponse(request, response);
-                }
+        Map<String, Object> params = request.getParameters();
+        boolean willThrottle = request instanceof SendMessage && params.get("reply_markup") == null && params.get("chat_id").toString().equals(String.valueOf(gid));
+        if (request instanceof SendMessage) {
+            ((SendMessage) request).parseMode(ParseMode.HTML);
+        }
+        Runnable execute = () -> {
+            if (willThrottle) {
+                broadcastMessageCache = "";
+                sendMessageFuture = null;
             }
+            bot.execute(request, new Callback<T, R>() {
+                @Override
+                public void onResponse(T request, R response) {
+                    if (callback != null) {
+                        callback.onResponse(request, response);
+                    }
+                }
 
-            @Override
-            public void onFailure(T request, IOException e) {
-                if (callback != null) {
-                    callback.onFailure(request, e);
+                @Override
+                public void onFailure(T request, IOException e) {
+                    if (callback != null) {
+                        callback.onFailure(request, e);
+                    }
+                    Game.this.logf("HTTP Error: %s %s\n", e.getClass().toString(), e.getMessage());
+                    e.printStackTrace();
+                    if (failCount < 5) { // linear backoff, max 5 retries
+                        new Thread(() -> {
+                            try {
+                                Thread.sleep(5000);
+                            } catch (InterruptedException ignored) {
+                            }
+                            Game.this.execute(request, callback, failCount + 1);
+                        }).start();
+                    } else {
+                        Game.this.kill(true);
+                    }
                 }
-                Game.this.logf("HTTP Error: %s %s\n%s\n", e.getClass().toString(), e.getMessage(), e.getStackTrace()[0]);
-                if (failCount < 5) { // linear backoff, max 5 retries
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(5000 * failCount + 5000);
-                        } catch (InterruptedException ignored) {
-                        }
-                        Game.this.execute(request, callback, failCount + 1);
-                    }).start();
-                } else {
-                    Game.this.kill(true);
-                }
+            });
+        };
+        if (willThrottle) {
+            // is broadcast and not keyboard
+            if (sendMessageFuture != null) {
+                sendMessageFuture.cancel(true);
+                sendMessageFuture = null;
             }
-        });
+            broadcastMessageCache += "\n\n" + params.get("text");
+            params.put("text", broadcastMessageCache);
+            sendMessageFuture = executor.schedule(execute, 1000, TimeUnit.MILLISECONDS);
+        } else {
+            execute.run();
+        }
     }
 
     public class GameResult {
