@@ -455,9 +455,9 @@ public class Game {
             }
             User currentPlayer = players.get(currentTurn);
             if (currentPlayer.username() != null) {
-                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), currentPlayer.username(), currentPlayer.firstName()) + cardStr).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                broadcastMessageCache += String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), currentPlayer.username(), currentPlayer.firstName()) + cardStr + "\n\n";
             } else {
-                this.execute(new SendMessage(group.id(), String.format(this.translation.PLAYED_ANNOUNCEMENT(), currentPlayer.firstName()) + cardStr).parseMode(ParseMode.HTML).disableWebPagePreview(true));
+                broadcastMessageCache += String.format(this.translation.PLAYED_ANNOUNCEMENT(), currentPlayer.firstName()) + cardStr + "\n\n";
             }
             if (currentDeck.length == hand.length) {
                 // player won
@@ -897,7 +897,7 @@ public class Game {
         Map<String, Object> params = request.getParameters();
         boolean willThrottle = request instanceof SendMessage && params.get("reply_markup") == null && params.get("chat_id").toString().equals(String.valueOf(gid));
         if (request instanceof SendMessage) {
-            ((SendMessage) request).parseMode(ParseMode.HTML);
+            ((SendMessage) request).parseMode(ParseMode.HTML).disableWebPagePreview(true);
         }
         Runnable execute = () -> {
             if (willThrottle) {
