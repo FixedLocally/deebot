@@ -454,10 +454,11 @@ public class Game {
                 gameSequence.add("sequence", array);
             }
             User currentPlayer = players.get(currentTurn);
+            broadcastMessageCache += "\n\n";
             if (currentPlayer.username() != null) {
-                broadcastMessageCache += String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), currentPlayer.username(), currentPlayer.firstName()) + cardStr + "\n\n";
+                broadcastMessageCache += String.format(this.translation.PLAYED_ANNOUNCEMENT_LINK(), currentPlayer.username(), currentPlayer.firstName()) + cardStr;
             } else {
-                broadcastMessageCache += String.format(this.translation.PLAYED_ANNOUNCEMENT(), currentPlayer.firstName()) + cardStr + "\n\n";
+                broadcastMessageCache += String.format(this.translation.PLAYED_ANNOUNCEMENT(), currentPlayer.firstName()) + cardStr;
             }
             if (currentDeck.length == hand.length) {
                 // player won
@@ -774,8 +775,8 @@ public class Game {
             }
             sb.append(String.format(this.translation.YOUR_TURN_ANNOUNCEMENT(), players.get(currentTurn).id(), players.get(currentTurn).firstName(), turnWait));
             String msg = sb.toString();
-            SendMessage send = new SendMessage(gid, msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
-            group.username();
+            SendMessage send = new SendMessage(gid, broadcastMessageCache + msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
+            broadcastMessageCache = "";
             send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.PICK_CARDS()).url("https://t.me/" + Main.getConfig("bot.username"))}));
             this.execute(send);
         }
