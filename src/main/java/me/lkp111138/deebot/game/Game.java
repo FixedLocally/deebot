@@ -775,8 +775,12 @@ public class Game {
             }
             sb.append(String.format(this.translation.YOUR_TURN_ANNOUNCEMENT(), players.get(currentTurn).id(), players.get(currentTurn).firstName(), turnWait));
             String msg = sb.toString();
-            SendMessage send = new SendMessage(gid, broadcastMessageCache + msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
+            SendMessage send = new SendMessage(gid, broadcastMessageCache + "\n\n" + msg).parseMode(ParseMode.HTML).disableWebPagePreview(true);
             broadcastMessageCache = "";
+            if (sendMessageFuture != null) {
+                sendMessageFuture.cancel(true);
+                sendMessageFuture = null;
+            }
             send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.PICK_CARDS()).url("https://t.me/" + Main.getConfig("bot.username"))}));
             this.execute(send);
         }
