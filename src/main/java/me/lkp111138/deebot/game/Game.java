@@ -728,7 +728,7 @@ public class Game {
     private void startTurn() {
         // ask the current player to play, while sending them the necessary info
         currentProposal = new ArrayList<>();
-        if (deskUser.id().equals(players.get(currentTurn).id())) {
+        if (deskUser != null && players.get(currentTurn).id().equals(deskUser.id())) {
             allPassed = true;
             deskUser = null;
             deskCards = new Card[0];
