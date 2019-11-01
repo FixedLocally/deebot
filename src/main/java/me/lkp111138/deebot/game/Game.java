@@ -350,6 +350,9 @@ public class Game {
                 processed = true;
                 break;
         }
+        if (processed) {
+            this.execute(answer);
+        }
         return processed;
     }
 
