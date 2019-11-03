@@ -13,7 +13,7 @@ public class TraditionalChinese extends Translation {
     }
     @Override
     public String JOIN_SUCCESS() {
-        return "你已成功加入 *%s* 的遊戲！遊戲編號：%d";
+        return "你已成功加入 <b>%s</b> 的遊戲！遊戲編號：%d";
     }
     @Override
     public String BACK_TO() {
