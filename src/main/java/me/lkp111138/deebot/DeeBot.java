@@ -163,6 +163,7 @@ public class DeeBot {
             stmt.setString(1, lang);
             stmt.setLong(2, gid);
             group_lang.put(gid, lang);
+            stmt.execute();
         } catch (SQLException e) {
             e.printStackTrace();
         }

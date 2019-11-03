@@ -20,6 +20,7 @@ import me.lkp111138.deebot.game.achievement.Achievement;
 import me.lkp111138.deebot.game.card.Cards;
 import me.lkp111138.deebot.game.card.Cards.Card;
 import me.lkp111138.deebot.misc.EmptyCallback;
+import me.lkp111138.deebot.translation.Translation;
 
 import java.io.IOException;
 import java.sql.*;
@@ -56,7 +57,7 @@ public class Game {
     private int currentMsgid;
     private int largestSingleObgligation = -1;
     private String lang;
-    private me.lkp111138.deebot.translation.Translation translation;
+    private Translation translation;
     private JsonObject gameSequence = new JsonObject();
     private int id;
     private String broadcastMessageCache = "";
@@ -94,7 +95,7 @@ public class Game {
         this.groupInfo = groupInfo;
         this.group = msg.chat();
         this.lang = DeeBot.lang(gid);
-        this.translation = me.lkp111138.deebot.translation.Translation.get(this.lang);
+        this.translation = Translation.get(this.lang);
         if (maintMode) {
             // disallow starting games
             this.execute(new SendMessage(gid, this.translation.MAINT_MODE_NOTICE()).parseMode(ParseMode.HTML), new EmptyCallback<>());
