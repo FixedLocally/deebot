@@ -2,6 +2,7 @@ package me.lkp111138.deebot;
 
 
 import com.pengrad.telegrambot.TelegramBot;
+import io.sentry.Sentry;
 import me.lkp111138.deebot.game.Game;
 import okhttp3.OkHttpClient;
 
@@ -30,6 +31,7 @@ public class Main {
             System.exit(1);
             return;
         }
+        Sentry.init(config.getProperty("sentry.dsn"));
         Class.forName("com.mysql.jdbc.Driver");
         conn = DriverManager.getConnection(String.format("jdbc:mysql://%s/%s?user=%s&password=%s&useSSL=false", config.get("db.host"), config.get("db.name"), config.get("db.user"), config.get("db.pwd")));
         OkHttpClient retrying_client = new OkHttpClient.Builder().retryOnConnectionFailure(true).build();

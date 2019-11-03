@@ -5,6 +5,7 @@ import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.*;
 import com.pengrad.telegrambot.request.AnswerCallbackQuery;
 import com.pengrad.telegrambot.request.AnswerPreCheckoutQuery;
+import io.sentry.Sentry;
 import me.lkp111138.deebot.commands.*;
 import me.lkp111138.deebot.game.Game;
 import me.lkp111138.deebot.game.achievement.*;
@@ -199,7 +200,11 @@ public class DeeBot {
     private void init() {
         this.bot.setUpdatesListener(list -> {
             for (Update update : list) {
-                processUpdate(update);
+                try {
+                    processUpdate(update);
+                } catch (Throwable e) {
+                    Sentry.capture(e);
+                }
             }
             return UpdatesListener.CONFIRMED_UPDATES_ALL;
         });
