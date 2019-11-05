@@ -381,7 +381,7 @@ public class Game {
 
     private void pass(AnswerCallbackQuery answer, CallbackQuery callbackQuery) {
         if (!firstRound) {
-            if (!allPassed) {
+            if (deskInfo != null) {
                 if (callbackQuery != null) {
                     this.execute(new EditMessageText(callbackQuery.message().chat().id(), callbackQuery.message().messageId(), this.translation.PASS()));
                     // notify group too
@@ -389,8 +389,9 @@ public class Game {
                 // we can cancel the job here cuz we no longer need auto pass for this round
                 cancelFuture(); // cancel that auto pass job
                 // cancel their obligation if they dont have a eligible card
+                // if the current player passed, we still check
                 Card[] currentDeck = cards[currentTurn];
-                if (cards[(currentTurn + 1) & 3].length == 1 && deskInfo.type == HandType.SINGLE) {
+                if (cards[(currentTurn + 1) & 3].length == 1 && (deskInfo.type == HandType.SINGLE)) {
                     if (currentDeck[currentDeck.length - 1].ordinal() < deskInfo.leading.ordinal()) {
                         largestSingleObgligation = -1;
                     } else {
@@ -700,7 +701,7 @@ public class Game {
             startingDecks.add(current);
         }
         for (int i = 0; i < 4; i++) {
-            System.arraycopy(cards[i], 0, startingCards[i], 0, 13);
+            System.arraycopy(cards[i], 0, startingCards[i], 0, CARDS_PER_PLAYER);
         }
         gameSequence.add("starting_decks", startingDecks);
         this.execute(new SendMessage(gid, String.join(" > ", order)).parseMode(ParseMode.HTML), new EmptyCallback<>());
@@ -744,7 +745,7 @@ public class Game {
             pass(new AnswerCallbackQuery("0"), null);
         } else {
             // prompt the player for cards
-            this.execute(new SendMessage(players.get(currentTurn).id(), this.translation.YOUR_TURN_PROMPT() + (allPassed || firstRound ? this.translation.THERE_IS_NOTHING() : (": " + replaceAllSuits(String.join("  ", deskCards))))).replyMarkup(buttonsFromDeck()), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(currentTurn).id(), this.translation.YOUR_TURN_PROMPT() + (deskInfo == null || firstRound ? this.translation.THERE_IS_NOTHING() : (": " + replaceAllSuits(String.join("  ", deskCards))))).replyMarkup(buttonsFromDeck()), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     currentMsgid = response.message().messageId();
@@ -867,7 +868,7 @@ public class Game {
             if (firstRound) {
                 play(new Cards.Card[]{Cards.Card.D3}, new AnswerCallbackQuery("0"), null);
             } else {
-                if (allPassed) {
+                if (deskInfo == null) {
                     // play the smallest single
                     play(new Cards.Card[]{cards[currentTurn][0]}, new AnswerCallbackQuery("0"), null);
                 } else {
