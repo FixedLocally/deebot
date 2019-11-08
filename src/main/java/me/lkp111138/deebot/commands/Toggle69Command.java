@@ -28,7 +28,7 @@ public class Toggle69Command implements Command {
                         e.printStackTrace();
                     }
                 } else {
-                    SendMessage send = new SendMessage(msg.chat().id(), "Sorry I'm not letting you disable this.");
+                    SendMessage send = new SendMessage(msg.chat().id(), "Sorry I'm not letting you disable this until Nov 12.");
                     bot.execute(send);
                 }
                 break;

@@ -286,7 +286,7 @@ public class HongKongChinese extends Translation {
     @Override
     public String JOIN_69_PROTEST() {
         return "He died because he fell off a carpark of a few meters high over a wall of over 4 feet, allegedly running avoid the police and tear gas.\n" +
-                "https://www.scmp.com/news/hong-kong/politics/article/3036833/hong-kong-student-who-suffered-severe-brain-injury-after" +
+                "https://www.scmp.com/news/hong-kong/politics/article/3036833/hong-kong-student-who-suffered-severe-brain-injury-after\n" +
                 "打 /toggle69 唔再顯示呢個訊息";
     }
 
