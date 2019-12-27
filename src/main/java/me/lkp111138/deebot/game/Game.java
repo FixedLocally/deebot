@@ -62,6 +62,7 @@ public class Game {
     private int id;
     private String broadcastMessageCache = "";
     private ScheduledFuture sendMessageFuture;
+    private int lastBroadcastMessageId;
 
     private boolean ended = false;
     private int[] offsets;
@@ -183,7 +184,7 @@ public class Game {
         if (!started && !players.contains(from) && !uidGames.containsKey(from.id()) && playerCount() < 4) {
             // notify player
             // .replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{}
-            SendMessage send = new SendMessage(msg.from().id(), String.format(this.translation.JOIN_SUCCESS(), msg.chat().title().replace("*", "\\*"), this.id)).parseMode(ParseMode.Markdown);
+            SendMessage send = new SendMessage(msg.from().id(), String.format(Translation.get(DeeBot.lang(msg.from().id())).JOIN_SUCCESS(), msg.chat().title().replace("*", "\\*"), this.id)).parseMode(ParseMode.Markdown);
             if (msg.chat().username() != null) {
                 send.replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.BACK_TO() + msg.chat().title()).url("https://t.me/" + msg.chat().username())}));
             }
@@ -713,8 +714,8 @@ public class Game {
 //                sb.append(cards[i][j].name());
 //            }
             int finalI = i;
-            this.execute(new SendMessage(players.get(i).id(), this.translation.STARTING_DECK() + replaceAllSuits(String.join(" ", cards[i]))), new EmptyCallback<>());
-            this.execute(new SendMessage(players.get(i).id(), this.translation.YOUR_DECK() + replaceAllSuits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(i).id(), Translation.get(DeeBot.lang(players.get(i).id())).STARTING_DECK() + replaceAllSuits(String.join(" ", cards[i]))), new EmptyCallback<>());
+            this.execute(new SendMessage(players.get(i).id(), Translation.get(DeeBot.lang(players.get(i).id())).YOUR_DECK() + replaceAllSuits(String.join(" ", cards[i]))).replyMarkup(new InlineKeyboardMarkup(new InlineKeyboardButton[]{new InlineKeyboardButton(this.translation.SORT_SUIT()).callbackData("sort:suit")})), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     deckMsgid[finalI] = response.message().messageId();
@@ -745,7 +746,7 @@ public class Game {
             pass(new AnswerCallbackQuery("0"), null);
         } else {
             // prompt the player for cards
-            this.execute(new SendMessage(players.get(currentTurn).id(), this.translation.YOUR_TURN_PROMPT() + (deskInfo == null || firstRound ? this.translation.THERE_IS_NOTHING() : (": " + replaceAllSuits(String.join("  ", deskCards))))).replyMarkup(buttonsFromDeck()), new Callback<SendMessage, SendResponse>() {
+            this.execute(new SendMessage(players.get(currentTurn).id(), Translation.get(DeeBot.lang(players.get(currentTurn).id())).YOUR_TURN_PROMPT() + (deskInfo == null || firstRound ? this.translation.THERE_IS_NOTHING() : (": " + replaceAllSuits(String.join("  ", deskCards))))).replyMarkup(buttonsFromDeck()), new Callback<SendMessage, SendResponse>() {
                 @Override
                 public void onResponse(SendMessage request, SendResponse response) {
                     currentMsgid = response.message().messageId();
@@ -918,6 +919,12 @@ public class Game {
                 @Override
                 public void onResponse(T request, R response) {
                     if (callback != null) {
+                        if (response instanceof SendResponse) {
+                            if (lastBroadcastMessageId > 0 && started) {
+                                execute(new DeleteMessage(gid, lastBroadcastMessageId));
+                            }
+                            lastBroadcastMessageId = ((SendResponse) response).message().messageId();
+                        }
                         callback.onResponse(request, response);
                     }
                 }
