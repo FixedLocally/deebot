@@ -3,6 +3,7 @@ package me.lkp111138.deebot.commands;
 import com.pengrad.telegrambot.Callback;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.CallbackQuery;
+import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.ChatMember;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
@@ -19,8 +20,19 @@ import me.lkp111138.deebot.translation.Translation;
 import java.io.IOException;
 
 public class SetLangCommand implements Command {
+    private static void send(TelegramBot bot, Message msg) {
+        long gid = msg.chat().id();
+        int uid = msg.from().id();
+        bot.execute(new SendMessage(gid, "語言設定 / Language Settings").replyMarkup(new InlineKeyboardMarkup(
+                new InlineKeyboardButton[]{new InlineKeyboardButton("繁體中文").callbackData("lang:zh:" + uid)},
+                new InlineKeyboardButton[]{new InlineKeyboardButton("廣東話").callbackData("lang:hk:" + uid)},
+                new InlineKeyboardButton[]{new InlineKeyboardButton("English").callbackData("lang:en:" + uid)},
+                new InlineKeyboardButton[]{new InlineKeyboardButton(Translation.get(DeeBot.lang(gid)).CLOSE()).callbackData("lang:close:" + uid)}
+        )));
+    }
+
     public void respond(TelegramBot bot, Message msg, String[] args) {
-        if (msg.from().id() == Main.BOT_OWNER) {
+        if (msg.from().id() == Main.BOT_OWNER || msg.chat().type() == Chat.Type.Private) {
             send(bot, msg);
             return;
         }
@@ -38,21 +50,6 @@ public class SetLangCommand implements Command {
 
             }
         });
-    }
-
-    private static void send(TelegramBot bot, Message msg) {
-        switch (msg.chat().type()) {
-            case group:
-            case supergroup:
-                long gid = msg.chat().id();
-                int uid = msg.from().id();
-                bot.execute(new SendMessage(gid, "語言設定 / Language Settings").replyMarkup(new InlineKeyboardMarkup(
-                        new InlineKeyboardButton[]{new InlineKeyboardButton("繁體中文").callbackData("lang:zh:" + uid)},
-                        new InlineKeyboardButton[]{new InlineKeyboardButton("廣東話").callbackData("lang:hk:" + uid)},
-                        new InlineKeyboardButton[]{new InlineKeyboardButton("English").callbackData("lang:en:" + uid)},
-                        new InlineKeyboardButton[]{new InlineKeyboardButton(Translation.get(DeeBot.lang(gid)).CLOSE()).callbackData("lang:close:" + uid)}
-                )));
-        }
     }
 
     public static boolean callback(TelegramBot bot, CallbackQuery query) {
