@@ -341,4 +341,16 @@ public class HongKongChinese extends Translation {
     public String CANCEL() {
         return "取消";
     }
+
+
+    @Override
+    public String STAT(int id, String name, int wonCards, int lostCards, int wonGames, int totalGames, int chips) {
+        return String.format("<a href=\"tg://user?id=%d\">%s</a> 的大老二統計數字：\n", id, name) +
+                String.format("贏牌數：%d\n", wonCards) +
+                String.format("輸牌數：%d\n", lostCards) +
+                String.format("贏/輸場數：%d / %d (%.2f%%)\n", wonGames, totalGames, 100.0 * wonGames / totalGames) +
+                String.format("贏/輸牌數：%d / %d (%.2f%%)\n", wonCards, lostCards, 100.0 * wonCards / lostCards) +
+                String.format("籌碼數：%d\n", chips) +
+                String.format("平均每場贏得籌碼：%.1f", (chips - 2000.0) / totalGames);
+    }
 }

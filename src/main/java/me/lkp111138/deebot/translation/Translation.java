@@ -302,4 +302,14 @@ public class Translation {
     public String CANCEL() {
         return "Cancel";
     }
+
+    public String STAT(int id, String name, int wonCards, int lostCards, int wonGames, int totalGames, int chips) {
+        return String.format("Big 2 statistics for <a href=\"tg://user?id=%d\">%s</a>\n", id, name) +
+                String.format("Won cards: %d\n", wonCards) +
+                String.format("Lost cards: %d\n", lostCards) +
+                String.format("Won/Total games: %d / %d (%.2f%%)\n", wonGames, totalGames, 100.0 * wonGames / totalGames) +
+                String.format("Won/Lost cards: %d / %d (%.2f%%)\n", wonCards, lostCards, 100.0 * wonCards / lostCards) +
+                String.format("Chips: %d\n", chips) +
+                String.format("Chips per game: %.1f", (chips - 2000.0) / totalGames);
+    }
 }
