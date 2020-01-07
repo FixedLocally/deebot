@@ -12,8 +12,9 @@ public class RunInfoCommand implements Command {
     @Override
     public void respond(TelegramBot bot, Message msg, String[] args) {
         Game.RunInfo runInfo = Game.runInfo();
-        StringBuilder text = new StringBuilder(String.format("Total games: %d\nRunning games: %d\nPlayers: %d\nGames:", runInfo.gameCount, runInfo.runningCount, runInfo.playerCount));
+        StringBuilder text = new StringBuilder(String.format("Total games: %d\nRunning games: %d\nPlayers: %d", runInfo.gameCount, runInfo.runningCount, runInfo.playerCount));
         if (msg.from().id() == Main.BOT_OWNER) {
+            text.append("\nGames:");
             for (Long key : runInfo.games.keySet()) {
                 Game game = runInfo.games.get(key);
                 text.append(String.format("\n\nGroup ID: %s\nRunning: %s\nID:%s\nPlayers:\n", key, game.getId(), game.started()));
