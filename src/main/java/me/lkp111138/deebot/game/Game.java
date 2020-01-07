@@ -934,9 +934,9 @@ public class Game {
                     if (callback != null) {
                         callback.onFailure(request, e);
                     }
-                    Game.this.logf("HTTP Error: %s %s\n", e.getClass().toString(), e.getMessage());
+                    Game.this.logf("HTTP Error (failCount=%s): %s %s\n", failCount, e.getClass().toString(), e.getMessage());
                     e.printStackTrace();
-                    if (failCount < 5) { // linear backoff, max 5 retries
+                    if (failCount < 3) { // linear backoff, max 3 retries
                         new Thread(() -> {
                             try {
                                 Thread.sleep(5000);
@@ -962,6 +962,10 @@ public class Game {
         } else {
             execute.run();
         }
+    }
+
+    public int getId() {
+        return id;
     }
 
     public class GameResult {
