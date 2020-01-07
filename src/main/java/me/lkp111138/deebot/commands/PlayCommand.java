@@ -22,7 +22,7 @@ public class PlayCommand implements Command {
         // ono LOGIC :EYES:
         if (msg.chat().type() == Chat.Type.Private) {
             // private chat cya
-            bot.execute(new SendMessage(msg.chat().id(), "You cannot play in private! Try using /" + args[0] + " in a group."));
+//            bot.execute(new SendMessage(msg.chat().id(), "You cannot play in private! Try using /" + args[0] + " in a group."));
         } else {
             Game g = Game.byGroup(msg.chat().id());
             if (g == null) {
@@ -70,7 +70,7 @@ public class PlayCommand implements Command {
                 }
             } else {
                 if (g.started()) {
-                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTED()).replyToMessageId(msg.messageId()));
+//                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTED()).replyToMessageId(msg.messageId()));
                 } else {
 //                    bot.execute(new SendMessage(msg.chat().id(), Translation.get(DeeBot.lang(msg.chat().id())).GAME_STARTING()).replyToMessageId(msg.messageId()));
                     // as if it's a join
