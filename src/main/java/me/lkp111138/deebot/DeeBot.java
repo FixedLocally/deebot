@@ -5,6 +5,7 @@ import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.*;
 import com.pengrad.telegrambot.request.AnswerCallbackQuery;
 import com.pengrad.telegrambot.request.AnswerPreCheckoutQuery;
+import com.pengrad.telegrambot.request.SendMessage;
 import io.sentry.Sentry;
 import me.lkp111138.deebot.commands.*;
 import me.lkp111138.deebot.game.Game;
@@ -18,9 +19,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DeeBot {
+    private final static int COMMAND_COUNT_THRESHOLD = 10;
+    private final static int COMMAND_INTERVAL = 15;
+
     private final Command fallback = new FallbackCommand();
     private final Map<String, Command> commands = new HashMap<>();
     private final TelegramBot bot;
+    private final Map<Integer, int[]> commandTimestamps = new HashMap<>();
 
     private static Map<Long, String> group_lang = new HashMap<>();
     private static Map<Long, Ban> bans = new HashMap<>();
@@ -59,6 +64,7 @@ public class DeeBot {
     private void processUpdate(Update update) {
         // get update type
         Message msg = update.message();
+        int from = msg.from().id();
         CallbackQuery query = update.callbackQuery();
         PreCheckoutQuery preCheckoutQuery = update.preCheckoutQuery();
         if (msg != null) {
@@ -102,7 +108,32 @@ public class DeeBot {
                     return;
                 }
                 try {
-                    commands.getOrDefault(cmd[0], fallback).respond(bot, msg, segments);
+                    // rate limiting
+                    int[] times = commandTimestamps.getOrDefault(from, new int[COMMAND_COUNT_THRESHOLD + 1]);
+                    int index = (times[COMMAND_COUNT_THRESHOLD] + 1) % COMMAND_COUNT_THRESHOLD;
+                    int date = times[index];
+                    times[index] = msg.date();
+                    commandTimestamps.put(from, times);
+//                    System.out.println(Arrays.toString(times));
+                    int s = times[index] - date;
+                    if (s < COMMAND_INTERVAL && s >= 0) {
+                        // ok boomer
+                        try (Connection conn = Main.getConnection()) {
+                            PreparedStatement stmt = conn.prepareStatement("select max(count) from bans where reason='spam cmd autoban' and tgid=?");
+                            stmt.setInt(1, from);
+                            ResultSet rs = stmt.executeQuery();
+                            int count = 0;
+                            if (rs.next()) {
+                                count = rs.getInt(1);
+                            }
+                            int secs = (int) (1800 * Math.pow(2, count));
+                            executeBan(from, "COMMAND", secs, "spam cmd autoban");
+                            bot.execute(new SendMessage(msg.chat().id(), String.format("Spamming detected. You have been banned for %s seconds.", secs)));
+                        }
+                    } else {
+                        commands.getOrDefault(cmd[0], fallback).respond(bot, msg, segments);
+                    }
+                    times[COMMAND_COUNT_THRESHOLD] = index;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
