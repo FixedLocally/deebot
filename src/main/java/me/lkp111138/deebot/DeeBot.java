@@ -64,10 +64,10 @@ public class DeeBot {
     private void processUpdate(Update update) {
         // get update type
         Message msg = update.message();
-        int from = msg.from().id();
         CallbackQuery query = update.callbackQuery();
         PreCheckoutQuery preCheckoutQuery = update.preCheckoutQuery();
         if (msg != null) {
+            int from = msg.from().id();
             MessageEntity[] entities = msg.entities();
             int sender = msg.from().id();
             // blacklist
