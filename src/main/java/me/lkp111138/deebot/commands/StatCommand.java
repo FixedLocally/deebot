@@ -35,7 +35,7 @@ public class StatCommand implements Command {
                     if (msg.from().id() == Main.BOT_OWNER) {
                         DeeBot.Ban ban = DeeBot.queryBanObject(target.id());
                         if (ban != null) {
-                            sb += "Banned until: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(ban.expiry * 1000L));
+                            sb += "\nBanned until: " + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date(ban.expiry * 1000L));
                             sb += "\nReason: " + ban.reason;
                         }
                     }
