@@ -17,7 +17,7 @@ public class RunInfoCommand implements Command {
             text.append("\nGames:");
             for (Long key : runInfo.games.keySet()) {
                 Game game = runInfo.games.get(key);
-                text.append(String.format("\n\nGroup ID: %s\nRunning: %s\nID:%s\nPlayers:\n", key, game.getId(), game.started()));
+                text.append(String.format("\n\nGroup ID: %s\nID:%s\nRunning: %s\nPlayers:\n", key, game.getId(), game.started()));
                 for (User player : game.getPlayers()) {
                     text.append(String.format("<a href=\"tg://user?id=%s\">%s</a> (%s)\n", player.id(), player.firstName(), player.id()));
                 }
