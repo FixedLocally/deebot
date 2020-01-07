@@ -13,6 +13,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class StatCommand implements Command {
     @Override
@@ -30,6 +32,13 @@ public class StatCommand implements Command {
             if (rs.next()) {
                 if (rs.getInt(5) > 0) {
                     String sb = translation.STAT(target.id(), target.firstName(), rs.getInt(2), rs.getInt(3), rs.getInt(4), rs.getInt(5), rs.getInt(1));
+                    if (msg.from().id() == Main.BOT_OWNER) {
+                        DeeBot.Ban ban = DeeBot.queryBanObject(target.id());
+                        if (ban != null) {
+                            sb += "Banned until: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(ban.expiry * 1000L));
+                            sb += "\nReason: " + ban.reason;
+                        }
+                    }
                     bot.execute(new SendMessage(msg.chat().id(), sb).replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));
                 } else {
                     bot.execute(new SendMessage(msg.chat().id(), "You haven't played a game yet!").replyToMessageId(msg.messageId()).parseMode(ParseMode.HTML));

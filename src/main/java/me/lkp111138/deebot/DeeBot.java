@@ -49,7 +49,7 @@ public class DeeBot {
             stmt.setString(5, reason);
             stmt.execute();
             stmt.close();
-            Ban ban = new Ban(tgid, expiry, type);
+            Ban ban = new Ban(tgid, expiry, type, reason);
             Ban oldBan = bans.get(tgid);
             if (oldBan == null || oldBan.expiry < ban.expiry) {
                 bans.put(tgid, ban);
@@ -203,7 +203,7 @@ public class DeeBot {
 
     /**
      * Query user or group ban status
-     * @param tgid the id to be ueried
+     * @param tgid the id to be queried
      * @return the type of ban, or null if none
      */
     public static String queryBan(long tgid) {
@@ -212,6 +212,16 @@ public class DeeBot {
             return null;
         }
         return ban.type;
+    }
+
+    /**
+     * Query user or group ban status
+     *
+     * @param tgid the id to be queried
+     * @return the type of ban, or null if none
+     */
+    public static Ban queryBanObject(long tgid) {
+        return bans.get(tgid);
     }
 
     private static boolean executeUnban(long tgid) {
@@ -279,13 +289,13 @@ public class DeeBot {
         Achievement.registerAchievement(new DeepFriedAchievement());
 
         // bans
-        try (PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT tgid, until, type from bans WHERE until>?")) {
+        try (PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT tgid, until, type, reason from bans WHERE until>?")) {
             stmt.setInt(1, (int) (System.currentTimeMillis() / 1000));
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 long tgid = rs.getLong(1);
                 Ban oldBan = bans.get(tgid);
-                Ban ban = new Ban(rs.getLong(1), rs.getInt(2), rs.getString(3));
+                Ban ban = new Ban(rs.getLong(1), rs.getInt(2), rs.getString(3), rs.getString(4));
                 if (oldBan == null || oldBan.expiry < ban.expiry) {
                     bans.put(tgid, ban);
                 }
@@ -295,15 +305,17 @@ public class DeeBot {
         }
     }
 
-    private static class Ban {
-        final long tgid;
-        final int expiry;
-        final String type;
+    public static class Ban {
+        public final long tgid;
+        public final int expiry;
+        public final String type;
+        public final String reason;
 
-        private Ban(long tgid, int expiry, String type) {
+        private Ban(long tgid, int expiry, String type, String reason) {
             this.tgid = tgid;
             this.expiry = expiry;
             this.type = type;
+            this.reason = reason;
         }
 
         @Override
