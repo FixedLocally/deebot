@@ -906,7 +906,8 @@ public class Game {
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback, int failCount) {
         Map<String, Object> params = request.getParameters();
-        boolean willThrottle = request instanceof SendMessage && params.get("reply_markup") == null && params.get("chat_id").toString().equals(String.valueOf(gid));
+        boolean isBroadcast = params.get("chat_id").toString().equals(String.valueOf(gid));
+        boolean willThrottle = request instanceof SendMessage && params.get("reply_markup") == null && isBroadcast;
         if (request instanceof SendMessage) {
             ((SendMessage) request).parseMode(ParseMode.HTML).disableWebPagePreview(true);
         }
@@ -919,11 +920,13 @@ public class Game {
                 @Override
                 public void onResponse(T request, R response) {
                     if (callback != null) {
-                        if (response instanceof SendResponse) {
-                            if (lastBroadcastMessageId > 0 && started) {
-                                execute(new DeleteMessage(gid, lastBroadcastMessageId));
+                        if (isBroadcast) {
+                            if (response instanceof SendResponse && response.isOk()) {
+                                if (lastBroadcastMessageId > 0 && started) {
+                                    execute(new DeleteMessage(gid, lastBroadcastMessageId));
+                                }
+                                lastBroadcastMessageId = ((SendResponse) response).message().messageId();
                             }
-                            lastBroadcastMessageId = ((SendResponse) response).message().messageId();
                         }
                         callback.onResponse(request, response);
                     }
