@@ -897,7 +897,7 @@ public class Game {
     }
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request) {
-        this.execute(request, null);
+        this.execute(request, new EmptyCallback<>());
     }
 
     private <T extends BaseRequest<T, R>, R extends BaseResponse> void execute(T request, Callback<T, R> callback) {
