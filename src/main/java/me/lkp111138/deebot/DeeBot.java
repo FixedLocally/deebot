@@ -282,6 +282,7 @@ public class DeeBot {
         commands.put("nextgame", new NextGameCommand());
         commands.put("bana", new BanCommand("ADMIN"));
         commands.put("banc", new BanCommand("COMMAND"));
+        commands.put("terms", new TermsCommand());
 
         // achievements
         Achievement.registerAchievement(new FirstGameAchievement());
