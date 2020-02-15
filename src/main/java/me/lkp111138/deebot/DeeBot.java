@@ -211,7 +211,11 @@ public class DeeBot {
         if (ban == null) {
             return null;
         }
-        return ban.type;
+        if (ban.expiry < System.currentTimeMillis() / 1000) {
+            return ban.type;
+        } else {
+            return null;
+        }
     }
 
     /**
