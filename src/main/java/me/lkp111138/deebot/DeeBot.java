@@ -225,7 +225,12 @@ public class DeeBot {
      * @return the type of ban, or null if none
      */
     public static Ban queryBanObject(long tgid) {
-        return bans.get(tgid);
+        Ban ban = bans.get(tgid);
+        if (ban.expiry < System.currentTimeMillis() / 1000) {
+            return ban;
+        } else {
+            return null;
+        }
     }
 
     private static boolean executeUnban(long tgid) {
