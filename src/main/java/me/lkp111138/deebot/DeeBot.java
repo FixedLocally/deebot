@@ -298,6 +298,7 @@ public class DeeBot {
         commands.put("bana", new BanCommand("ADMIN"));
         commands.put("banc", new BanCommand("COMMAND"));
         commands.put("terms", new TermsCommand());
+        commands.put("broadcast", new BroadcastCommand());
 
         // achievements
         Achievement.registerAchievement(new FirstGameAchievement());
