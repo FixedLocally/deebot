@@ -70,13 +70,6 @@ public class DeeBot {
             int from = msg.from().id();
             MessageEntity[] entities = msg.entities();
             int sender = msg.from().id();
-            // blacklist
-            if ("COMMAND".equals(queryBan(sender))) {
-                return;
-            }
-            if ("COMMAND".equals(queryBan(msg.chat().id()))) {
-                return;
-            }
             if (msg.migrateFromChatId() != null) {
                 // migrate settings if any
                 try (Connection conn = Main.getConnection()) {
@@ -86,6 +79,19 @@ public class DeeBot {
                     stmt.execute();
                 } catch (SQLException e) {
                     e.printStackTrace();
+                }
+            }
+            if (msg.newChatMembers() != null) {
+                for (User user : msg.newChatMembers()) {
+                    if (user.id().toString().equals(Main.getConfig("bot.uid"))) {
+                        Ban ban = queryBanObject(msg.chat().id());
+                        if (ban == null) {
+                            return;
+                        }
+                        if (ban.reason.equals("kick autoban")) {
+                            bot.execute(new SendMessage(msg.chat().id(), String.format("The bot was just kicked from this group therefore there is a cooldown applied to this group. Please wait %1$s minutes before trying to start a game. Sorry for inconvenience.\n本bot剛才被本群組移除，因此需要等待%1$s分鐘才能開始新遊戲。不便之處，謹此致歉。", (ban.expiry - System.currentTimeMillis() / 1000) / 60 + 1)));
+                        }
+                    }
                 }
             }
             if (msg.leftChatMember() != null && msg.leftChatMember().id().toString().equals(Main.getConfig("bot.uid"))) {
@@ -106,6 +112,15 @@ public class DeeBot {
                 if (cmd.length > 1 && !cmd[1].equals(Main.getConfig("bot.username"))) {
                     // command not intended for me
                     return;
+                }
+                if (!cmd[0].equals("terms")) { // still allow access to /terms
+                    // blacklist
+                    if ("COMMAND".equals(queryBan(sender))) {
+                        return;
+                    }
+                    if ("COMMAND".equals(queryBan(msg.chat().id()))) {
+                        return;
+                    }
                 }
                 try {
                     // rate limiting
