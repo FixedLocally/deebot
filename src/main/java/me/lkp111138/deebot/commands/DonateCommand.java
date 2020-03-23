@@ -22,9 +22,13 @@ public class DonateCommand implements Command {
                 return;
             }
         }
+        String currency = "HKD";
+        if (args.length > 2) {
+            currency = args[2];
+        }
         SendInvoice send = new SendInvoice(msg.from().id(), Main.getConfig("bot.username") + " Donation",
                 "Support the bot development", "" + amount, Main.getConfig("bot.stripe_token"),
-                "donate_" + amount, "HKD", new LabeledPrice("Donation", amount));
+                "donate_" + amount, currency, new LabeledPrice("Donation", amount));
         bot.execute(send);
     }
 }
