@@ -32,10 +32,10 @@ public abstract class Achievement {
         achvs.add(achv);
     }
 
-    public static void executeAchievements(TelegramBot bot, Game.GameResult result, int uid, int index) {
+    public static void executeAchievements(TelegramBot bot, Game.GameResult result, long uid, int index) {
         HashSet<String> unlocked = new HashSet<>();
         try (PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT achv FROM achv_log WHERE tgid=?")) {
-            stmt.setInt(1, uid);
+            stmt.setLong(1, uid);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 unlocked.add(rs.getString(1));
@@ -45,7 +45,7 @@ public abstract class Achievement {
         }
         PlayerProfile profile;
         try (PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT game_count, won_count, won_cards, lost_cards, chips FROM tg_users where tgid=?")) {
-            stmt.setInt(1, uid);
+            stmt.setLong(1, uid);
             ResultSet rs = stmt.executeQuery();
             rs.next();
             profile = new PlayerProfile(uid, rs.getInt(1), rs.getInt(2), rs.getInt(3),
@@ -59,7 +59,7 @@ public abstract class Achievement {
         for (Achievement achv : achvs) {
             if (!unlocked.contains(achv.getTag()) && achv.canUnlock(result, profile, index)) {
                 try (PreparedStatement stmt = Main.getConnection().prepareStatement("INSERT INTO achv_log (tgid, achv) VALUE (?, ?)")) {
-                    stmt.setInt(1, uid);
+                    stmt.setLong(1, uid);
                     stmt.setString(2, achv.getTag());
                     stmt.execute();
                     Translation translation = Translation.get(null);
@@ -79,14 +79,14 @@ public abstract class Achievement {
     public abstract String getTag();
 
     public static class PlayerProfile {
-        final int uid;
+        final long uid;
         final int game_count;
         final int won_count;
         final int won_cards;
         final int lost_cards;
         final int chips;
 
-        private PlayerProfile(int uid, int game_count, int won_count, int won_cards, int lost_cards, int chips) {
+        private PlayerProfile(long uid, int game_count, int won_count, int won_cards, int lost_cards, int chips) {
             this.uid = uid;
             this.game_count = game_count;
             this.won_count = won_count;

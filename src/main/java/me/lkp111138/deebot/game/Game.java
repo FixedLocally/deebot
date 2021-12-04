@@ -71,7 +71,7 @@ public class Game {
     public static boolean maintMode = false; // true=disallow starting games
     private static TelegramBot bot;
     private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(2);
-    private static Map<Integer, Game> uidGames = new HashMap<>();
+    private static Map<Long, Game> uidGames = new HashMap<>();
     private static final int CARDS_PER_PLAYER = 13;
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private static int[] remindSeconds = new int[]{15, 30, 60, 90, 120, 180};
@@ -157,7 +157,7 @@ public class Game {
         this.logf("Game created in %s [%d]", msg.chat().title(), msg.chat().id());
     }
 
-    public static Game byUser(int tgid) {
+    public static Game byUser(long tgid) {
         return uidGames.get(tgid);
     }
 
@@ -223,7 +223,7 @@ public class Game {
         }
     }
 
-    public boolean removePlayer(int tgid) {
+    public boolean removePlayer(long tgid) {
         // if not in game then do nothing
         // otherwise remove them
         if (!started && players.removeIf(user -> user.id() == tgid)) {
@@ -263,7 +263,7 @@ public class Game {
     }
 
     public boolean callback(CallbackQuery callbackQuery) {
-        int tgid = callbackQuery.from().id();
+        long tgid = callbackQuery.from().id();
         String payload = callbackQuery.data();
         String[] args = payload.split(":");
         AnswerCallbackQuery answer = new AnswerCallbackQuery(callbackQuery.id());
@@ -587,7 +587,7 @@ public class Game {
                 stmt.setInt(2, won ? 1 : 0);
                 stmt.setInt(3, won ? 0 : cards[i].length);
                 stmt.setInt(4, won ? cards[0].length + cards[1].length + cards[2].length + cards[3].length : 0);
-                stmt.setInt(5, players.get(i).id());
+                stmt.setLong(5, players.get(i).id());
                 stmt.execute();
                 stmt.close();
             }
@@ -992,8 +992,8 @@ public class Game {
         /**
          * @return the user id's participated in the game
          */
-        public int[] getPlayers() {
-            int[] uids = new int[4];
+        public long[] getPlayers() {
+            long[] uids = new long[4];
             for (int i = 0; i < 4; i++) {
                 uids[i] = players.get(i).id();
             }

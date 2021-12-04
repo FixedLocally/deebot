@@ -21,7 +21,7 @@ public class JoinCommand implements Command {
         try (Connection conn = Main.getConnection()) {
             // create user profile if there wasn't one
             PreparedStatement stmt = conn.prepareStatement("INSERT IGNORE INTO tg_users (tgid, username) VALUES (?, ?)");
-            stmt.setInt(1, msg.from().id());
+            stmt.setLong(1, msg.from().id());
             stmt.setString(2, msg.from().username());
             stmt.execute();
         } catch (SQLException e) {

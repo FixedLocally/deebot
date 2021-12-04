@@ -22,7 +22,7 @@ public class AchvCommand implements Command {
         }
         try (PreparedStatement stmt = Main.getConnection().prepareStatement("SELECT achv FROM achv_log WHERE tgid=?")) {
             Translation translation = Translation.get(DeeBot.lang(msg.chat().id()));
-            stmt.setInt(1, target.id());
+            stmt.setLong(1, target.id());
             ResultSet rs = stmt.executeQuery();
             StringBuilder sb = new StringBuilder(translation.ACHV_UNLOCKED());
             int count = 0;

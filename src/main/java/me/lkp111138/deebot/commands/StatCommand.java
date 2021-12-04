@@ -27,7 +27,7 @@ public class StatCommand implements Command {
         translation = Translation.get(DeeBot.lang(msg.chat().id()));
         try (Connection conn = Main.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement("SELECT chips, won_cards, lost_cards, won_count, game_count FROM tg_users WHERE tgid=?");
-            stmt.setInt(1, target.id());
+            stmt.setLong(1, target.id());
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 if (rs.getInt(5) > 0) {

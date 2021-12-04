@@ -25,7 +25,7 @@ public class DeeBot {
     private final Command fallback = new FallbackCommand();
     private final Map<String, Command> commands = new HashMap<>();
     private final TelegramBot bot;
-    private final Map<Integer, int[]> commandTimestamps = new HashMap<>();
+    private final Map<Long, int[]> commandTimestamps = new HashMap<>();
 
     private static Map<Long, String> group_lang = new HashMap<>();
     private static Map<Long, Ban> bans = new HashMap<>();
@@ -67,9 +67,9 @@ public class DeeBot {
         CallbackQuery query = update.callbackQuery();
         PreCheckoutQuery preCheckoutQuery = update.preCheckoutQuery();
         if (msg != null) {
-            int from = msg.from().id();
+            long from = msg.from().id();
             MessageEntity[] entities = msg.entities();
-            int sender = msg.from().id();
+            long sender = msg.from().id();
             if (msg.migrateFromChatId() != null) {
                 // migrate settings if any
                 try (Connection conn = Main.getConnection()) {
@@ -135,7 +135,7 @@ public class DeeBot {
                         // ok boomer
                         try (Connection conn = Main.getConnection()) {
                             PreparedStatement stmt = conn.prepareStatement("select max(count) from bans where reason='spam cmd autoban' and tgid=?");
-                            stmt.setInt(1, from);
+                            stmt.setLong(1, from);
                             ResultSet rs = stmt.executeQuery();
                             int count = 0;
                             if (rs.next()) {

@@ -343,7 +343,7 @@ public class TraditionalChinese extends Translation {
     }
 
     @Override
-    public String STAT(int id, String name, int wonCards, int lostCards, int wonGames, int totalGames, int chips) {
+    public String STAT(long id, String name, int wonCards, int lostCards, int wonGames, int totalGames, int chips) {
         return String.format("<a href=\"tg://user?id=%d\">%s</a> 的大老二統計數字：\n", id, name) +
                 String.format("贏牌數：%d\n", wonCards) +
                 String.format("輸牌數：%d\n", lostCards) +

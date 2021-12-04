@@ -303,7 +303,7 @@ public class Translation {
         return "Cancel";
     }
 
-    public String STAT(int id, String name, int wonCards, int lostCards, int wonGames, int totalGames, int chips) {
+    public String STAT(long id, String name, int wonCards, int lostCards, int wonGames, int totalGames, int chips) {
         return String.format("Big 2 statistics for <a href=\"tg://user?id=%d\">%s</a>\n", id, name) +
                 String.format("Won cards: %d\n", wonCards) +
                 String.format("Lost cards: %d\n", lostCards) +

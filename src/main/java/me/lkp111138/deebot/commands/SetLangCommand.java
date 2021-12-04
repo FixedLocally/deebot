@@ -22,7 +22,7 @@ import java.io.IOException;
 public class SetLangCommand implements Command {
     private static void send(TelegramBot bot, Message msg) {
         long gid = msg.chat().id();
-        int uid = msg.from().id();
+        long uid = msg.from().id();
         bot.execute(new SendMessage(gid, "語言設定 / Language Settings").replyMarkup(new InlineKeyboardMarkup(
                 new InlineKeyboardButton[]{new InlineKeyboardButton("繁體中文").callbackData("lang:zh:" + uid)},
                 new InlineKeyboardButton[]{new InlineKeyboardButton("廣東話").callbackData("lang:hk:" + uid)},
@@ -53,7 +53,7 @@ public class SetLangCommand implements Command {
     }
 
     public static boolean callback(TelegramBot bot, CallbackQuery query) {
-        int tgid = query.from().id();
+        long tgid = query.from().id();
         long gid = query.message().chat().id();
         int mid = query.message().messageId();
         String payload = query.data();

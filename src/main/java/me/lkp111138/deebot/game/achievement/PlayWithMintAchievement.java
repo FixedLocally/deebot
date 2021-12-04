@@ -6,7 +6,7 @@ import me.lkp111138.deebot.game.Game;
 public class PlayWithMintAchievement extends Achievement {
     @Override
     public boolean canUnlock(Game.GameResult result, PlayerProfile profile, int index) {
-        int[] players = result.getPlayers();
+        long[] players = result.getPlayers();
         for (int i = 0; i < 4; i++) {
             if (players[i] == Main.BOT_OWNER) {
                 return true;
